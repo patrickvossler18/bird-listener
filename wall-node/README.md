@@ -24,17 +24,28 @@ Point it at the detection Pi and tune thresholds via env vars (see `config.py`
 for the full list):
 
 ```bash
-export BL_MQTT_HOST=birdpi.local      # hostname/IP of the window node
+export BL_MQTT_HOST=birdpi.local        # hostname/IP of the window node
 export BL_MIN_CONFIDENCE=0.65
-export BL_DEBOUNCE_SECONDS=300        # don't redraw same species within 5 min
-export BL_LUX_OFF=5 BL_LUX_ON=15      # light-gate hysteresis
+export BL_MAX_BIRDS=4                    # show up to 4 recent birds as a collage (1 = single)
+export BL_MULTI_WINDOW_SECONDS=900       # birds heard within 15 min are grouped
+export BL_MIN_REFRESH_SECONDS=30         # protect the slow panel from rapid redraws
+export BL_LUX_OFF=5 BL_LUX_ON=15         # light-gate hysteresis
 ```
+
+### Multi-bird collage
+
+Detections within `BL_MULTI_WINDOW_SECONDS` are grouped and shown together:
+1 bird → full-bleed plate + caption; 2–4 birds → a 2-column grid, each cell a
+plate with a small name strip (most-recent bird first). The panel only refreshes
+when the *set* of recent birds changes, and never more often than
+`BL_MIN_REFRESH_SECONDS`. Set `BL_MAX_BIRDS=1` for classic single-bird behavior.
 
 ## Run
 
 ```bash
 python display_service.py             # service loop (MQTT + light gate)
-python display_service.py --once "Cardinalis cardinalis" --common "Northern Cardinal"
+python display_service.py --once "Cardinalis cardinalis"                       # one bird
+python display_service.py --once "Cardinalis cardinalis" "Cyanocitta cristata" # collage preview
 python display_service.py --clear     # blank the panel
 ```
 

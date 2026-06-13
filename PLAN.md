@@ -39,10 +39,12 @@ Data flow:
 1. BirdNET-Go analyzes 3-second audio segments continuously and, on a confident
    detection, publishes a JSON event to MQTT (`commonName`, `scientificName`,
    `confidence`, `timestamp`).
-2. The wall node subscribes to that topic. On a new species (above a confidence
-   threshold), it maps the **scientific name → a local Audubon plate image**,
-   dithers to the 6-color palette, and refreshes the panel with the art + a small
-   species caption.
+2. The wall node subscribes to that topic. It keeps a **rolling window** of
+   recent species (deduped) and renders the **scientific name → local Audubon
+   plate image(s)**, dithered to the 6-color palette: a single bird fills the
+   panel with a caption; multiple birds heard in the window are shown as a 2–4
+   cell **collage**. The panel only refreshes when the set of recent birds
+   changes (and never faster than a min-refresh interval).
 3. The BH1750 gates the display: below a lux threshold (lights off), the service
    stops refreshing / clears to blank. E-ink holds its last image with zero
    power, so "off" simply means "don't drive it."
@@ -98,7 +100,8 @@ bird-listener/
 │   ├─ species_map.json      # scientificName → image filename
 │   └─ images/               # cropped Audubon plates
 └─ tools/
-    └─ build_images.py       # Audubon source → cropped/resized library + map
+    ├─ fetch_plates.py       # pull plates from Wikimedia Commons by scientific name
+    └─ build_images.py       # process manually-sourced plates (local folder + CSV)
 ```
 
 **1. BirdNET-Go (window node)** — run via Docker (`tphakala/birdnet-go`).
@@ -121,10 +124,13 @@ caption), `smbus2`/BH1750 driver.
 - Light gate: poll BH1750 with hysteresis (e.g. off below ~5 lux, on above
   ~15 lux) to avoid flicker at dusk. When "off," skip refreshes / optionally clear.
 
-**3. Image pipeline (`tools/build_images.py`)** — download high-res plates
-(audubon.org / Internet Archive / Rawpixel CC0), crop to the bird, resize to the
-panel aspect, save to `wall-node/images/`, and emit/extend `species_map.json`
-keyed by scientific name.
+**3. Image pipeline** — primary tool `tools/fetch_plates.py` pulls plates from
+**Wikimedia Commons** by scientific name (category intersection of
+`The Birds of America` × `{species} (illustrations)`), resized via the Commons
+CDN, into `wall-node/images/` + `species_map.json`. Public domain, no API key.
+`tools/build_images.py` remains for plates sourced manually (local folder + CSV).
+(No official Audubon API exists; Commons is the reliable scientific-name-keyed
+source — verified by fetching real plates.)
 
 ## Build & framing notes
 

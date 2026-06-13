@@ -39,8 +39,16 @@ class Config:
     # --- Detection filtering ---
     # Ignore detections below this confidence (BirdNET confidence is 0..1).
     min_confidence: float = _env_float("BL_MIN_CONFIDENCE", 0.65)
-    # Don't redraw the same species more often than this (seconds).
-    debounce_seconds: float = _env_float("BL_DEBOUNCE_SECONDS", 300.0)
+
+    # --- Multi-bird display ---
+    # Max birds shown at once (1 = always show only the most recent bird).
+    max_birds: int = _env_int("BL_MAX_BIRDS", 4)
+    # A detected species stays in the on-screen group for this long (seconds);
+    # birds heard within the same window are shown together as a collage.
+    multi_window_seconds: float = _env_float("BL_MULTI_WINDOW_SECONDS", 900.0)
+    # Never refresh the (slow) e-ink panel more often than this, to protect it
+    # and avoid flicker when several distinct species arrive in quick succession.
+    min_refresh_seconds: float = _env_float("BL_MIN_REFRESH_SECONDS", 30.0)
 
     # --- Display panel ---
     panel_width: int = _env_int("BL_PANEL_WIDTH", 800)

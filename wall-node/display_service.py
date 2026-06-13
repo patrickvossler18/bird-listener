@@ -2,13 +2,14 @@
 """Wall-node display service.
 
 Subscribes to BirdNET-Go detections over MQTT and refreshes the framed e-ink
-panel with the matching Audubon plate. A BH1750 light sensor blanks the display
-when the room is dark.
+panel with the matching Audubon plate(s). Birds heard within a rolling window
+are shown together as a collage (up to BL_MAX_BIRDS). A BH1750 light sensor
+blanks the display when the room is dark.
 
 Usage:
-  python display_service.py                 # run the MQTT service loop
-  python display_service.py --once "<sci>"  # render one species and exit (no MQTT)
-  python display_service.py --clear         # clear the panel and exit
+  python display_service.py                       # run the MQTT service loop
+  python display_service.py --once "<sci>" [...]  # render given species and exit
+  python display_service.py --clear               # clear the panel and exit
 """
 from __future__ import annotations
 
@@ -22,7 +23,7 @@ from pathlib import Path
 from config import CONFIG
 from display_driver import get_driver
 from light_sensor import LightSensor
-from renderer import compose, to_panel
+from renderer import compose_birds, to_panel
 
 
 def load_species_map(path: Path) -> dict:
@@ -34,30 +35,36 @@ def load_species_map(path: Path) -> dict:
 
 
 def resolve_plate(species_map: dict, scientific_name: str) -> Path | None:
-    """Look up the image filename for a scientific name (case-insensitive)."""
-    key = scientific_name.strip().lower()
+    """Look up the image path for a scientific name (case-insensitive)."""
     by_lower = {k.lower(): v for k, v in species_map.items()}
-    filename = by_lower.get(key)
+    filename = by_lower.get(scientific_name.strip().lower())
     if not filename:
         return None
     path = CONFIG.images_dir / filename
     return path if path.exists() else None
 
 
-def render_and_show(driver, species_map, *, common, scientific, when) -> None:
-    plate = resolve_plate(species_map, scientific)
-    if plate is None:
-        print(f"[render] no plate for '{scientific}' -> fallback card")
-    frame = compose(
-        width=CONFIG.panel_width,
-        height=CONFIG.panel_height,
-        common_name=common or scientific,
-        scientific_name=scientific,
-        detected_at=when,
-        plate_path=plate,
-        fonts_dir=CONFIG.fonts_dir,
-    )
-    driver.show(to_panel(frame))
+class RecentBirds:
+    """Tracks recently-heard species within a rolling window, deduped by species
+    (latest wins), most-recent first, capped at `max_birds`."""
+
+    def __init__(self, window_seconds: float, max_birds: int):
+        self.window = window_seconds
+        self.max_birds = max_birds
+        self._by_species: dict[str, dict] = {}  # scientific(lower) -> entry
+
+    def add(self, *, scientific, common, when, now) -> None:
+        self._by_species[scientific.lower()] = {
+            "scientific": scientific, "common": common, "when": when, "ts": now,
+        }
+
+    def current(self, now) -> list[dict]:
+        live = [e for e in self._by_species.values() if (now - e["ts"]) <= self.window]
+        live.sort(key=lambda e: e["ts"], reverse=True)
+        return live[: self.max_birds]
+
+    def signature(self, now) -> tuple:
+        return tuple(e["scientific"].lower() for e in self.current(now))
 
 
 class Service:
@@ -67,22 +74,41 @@ class Service:
         self.light = LightSensor(
             CONFIG.lux_off, CONFIG.lux_on, force_mock=CONFIG.force_mock_light
         )
-        self._last_shown: dict[str, float] = {}  # scientific_name -> monotonic ts
+        self.recent = RecentBirds(CONFIG.multi_window_seconds, CONFIG.max_birds)
         self._lock = threading.Lock()
         self._display_on = True
-        self._pending = None  # (common, scientific, when) deferred while dark
+        self._pending = False          # display set changed since last render
+        self._last_render_ts = -1e9    # monotonic
+        self._rendered_sig: tuple = ()
         print(f"[service] display={self.driver.name} "
-              f"light={'mock' if self.light.is_mock else 'BH1750'}")
+              f"light={'mock' if self.light.is_mock else 'BH1750'} "
+              f"max_birds={CONFIG.max_birds}")
 
-    # --- detection handling ---
-    def _accept(self, scientific: str, confidence: float) -> bool:
-        if confidence < CONFIG.min_confidence:
-            return False
-        now = time.monotonic()
-        last = self._last_shown.get(scientific.lower())
-        if last is not None and (now - last) < CONFIG.debounce_seconds:
-            return False
-        return True
+    def _render_now(self, now) -> None:
+        birds = [
+            {**e, "plate_path": resolve_plate(self.species_map, e["scientific"])}
+            for e in self.recent.current(now)
+        ]
+        for b in birds:
+            if b["plate_path"] is None:
+                print(f"[render] no plate for '{b['scientific']}' -> fallback card")
+        names = ", ".join(b["common"] or b["scientific"] for b in birds)
+        print(f"[render] drawing {len(birds)} bird(s): {names}")
+        self.driver.show(to_panel(
+            compose_birds(CONFIG.panel_width, CONFIG.panel_height, birds, CONFIG.fonts_dir)
+        ))
+        self._rendered_sig = self.recent.signature(now)
+        self._last_render_ts = now
+        self._pending = False
+
+    def _try_render(self, now) -> None:
+        """Render if there's a pending change, the room is lit, and we're past
+        the minimum refresh interval (protects the slow panel)."""
+        if not (self._pending and self._display_on):
+            return
+        if (now - self._last_render_ts) < CONFIG.min_refresh_seconds:
+            return
+        self._render_now(now)
 
     def handle_detection(self, payload: dict) -> None:
         scientific = (payload.get("scientificName")
@@ -94,45 +120,41 @@ class Service:
         if not scientific:
             print(f"[detect] ignoring payload without scientific name: {payload}")
             return
-        if not self._accept(scientific, confidence):
+        if confidence < CONFIG.min_confidence:
             return
 
+        now = time.monotonic()
         with self._lock:
-            self._last_shown[scientific.lower()] = time.monotonic()
-            triple = (common, scientific, when)
-            if self._display_on:
-                print(f"[detect] {common or scientific} ({confidence:.2f}) -> drawing")
-                render_and_show(self.driver, self.species_map,
-                                common=common, scientific=scientific, when=when)
-            else:
-                # Remember the latest bird so we can show it when lights return.
-                print(f"[detect] {common or scientific} held (room dark)")
-                self._pending = triple
+            self.recent.add(scientific=scientific, common=common, when=when, now=now)
+            if self.recent.signature(now) != self._rendered_sig:
+                self._pending = True
+                print(f"[detect] {common or scientific} ({confidence:.2f}) "
+                      f"-> group now {list(self.recent.signature(now))}")
+            self._try_render(now)
 
-    # --- light gate loop ---
-    def light_loop(self) -> None:
+    def tick_loop(self) -> None:
+        """Periodic: update the light gate and flush any time-gated render."""
         while True:
             on = self.light.display_should_be_on()
+            now = time.monotonic()
             with self._lock:
                 if on and not self._display_on:
                     self._display_on = True
                     print("[light] room lit -> display on")
-                    if self._pending:
-                        c, s, w = self._pending
-                        self._pending = None
-                        render_and_show(self.driver, self.species_map,
-                                        common=c, scientific=s, when=w)
+                    self._pending = self._pending or (
+                        self.recent.signature(now) != self._rendered_sig)
                 elif not on and self._display_on:
                     self._display_on = False
                     print("[light] room dark -> display off")
                     self.driver.clear()
+                    self._rendered_sig = ()  # force redraw when lit again
+                self._try_render(now)
             time.sleep(CONFIG.light_poll_seconds)
 
-    # --- mqtt loop ---
     def run(self) -> None:
         import paho.mqtt.client as mqtt
 
-        threading.Thread(target=self.light_loop, daemon=True).start()
+        threading.Thread(target=self.tick_loop, daemon=True).start()
 
         def on_connect(client, userdata, flags, rc, *args):
             print(f"[mqtt] connected rc={rc}; subscribing {CONFIG.mqtt_topic}")
@@ -158,9 +180,8 @@ class Service:
 
 def main(argv: list[str]) -> int:
     ap = argparse.ArgumentParser(description="Bird Listener wall-node display service")
-    ap.add_argument("--once", metavar="SCIENTIFIC_NAME",
-                    help="render one species to the panel and exit (no MQTT)")
-    ap.add_argument("--common", default="", help="common name for --once")
+    ap.add_argument("--once", nargs="+", metavar="SCIENTIFIC_NAME",
+                    help="render the given species(s) to the panel and exit (no MQTT)")
     ap.add_argument("--clear", action="store_true", help="clear the panel and exit")
     args = ap.parse_args(argv)
 
@@ -171,8 +192,14 @@ def main(argv: list[str]) -> int:
     if args.once:
         species_map = load_species_map(CONFIG.species_map_path)
         driver = get_driver(CONFIG.out_dir, force_mock=CONFIG.force_mock_display)
-        render_and_show(driver, species_map,
-                        common=args.common, scientific=args.once, when=None)
+        birds = [
+            {"scientific": s, "common": "", "when": None,
+             "plate_path": resolve_plate(species_map, s)}
+            for s in args.once
+        ]
+        driver.show(to_panel(
+            compose_birds(CONFIG.panel_width, CONFIG.panel_height, birds, CONFIG.fonts_dir)
+        ))
         return 0
 
     Service().run()

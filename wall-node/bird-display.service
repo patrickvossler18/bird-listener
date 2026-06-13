@@ -9,7 +9,9 @@ User=pi
 WorkingDirectory=/home/pi/bird-listener/wall-node
 Environment=BL_MQTT_HOST=birdpi.local
 Environment=BL_MIN_CONFIDENCE=0.65
-Environment=BL_DEBOUNCE_SECONDS=300
+Environment=BL_MAX_BIRDS=4
+Environment=BL_MULTI_WINDOW_SECONDS=900
+Environment=BL_MIN_REFRESH_SECONDS=30
 Environment=BL_LUX_OFF=5
 Environment=BL_LUX_ON=15
 Environment=PYTHONPATH=/home/pi/e-Paper/RaspberryPi_JetsonNano/python/lib

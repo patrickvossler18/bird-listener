@@ -74,10 +74,18 @@ run `display_service.py` (as a systemd service for always-on).
 
 ## Building the image library
 
-`tools/build_images.py` crops/resizes Audubon plates to the panel and writes
-`species_map.json`. The Audubon *Birds of America* plates are public domain
-(published 1827–1838); download high-res scans from audubon.org, the Internet
-Archive, or Rawpixel (CC0). See [`tools/README.md`](tools/README.md).
+Easiest path — pull plates automatically from **Wikimedia Commons** by
+scientific name (public domain, no API key):
+
+```bash
+cd tools && python fetch_plates.py --from-map      # fetch every species in species_map.json
+python fetch_plates.py "Cardinalis cardinalis"     # or specific species
+```
+
+This downloads into `wall-node/images/` and keeps `species_map.json` in sync.
+For plates you've sourced yourself, `tools/build_images.py` processes a local
+folder + CSV instead. The Audubon *Birds of America* plates are public domain
+(published 1827–1838). See [`tools/README.md`](tools/README.md).
 
 ## Status / roadmap
 

@@ -1,5 +1,42 @@
 # tools — image library pipeline
 
+Two ways to build the image library:
+
+- **`fetch_plates.py` (recommended)** — pulls plates automatically from
+  **Wikimedia Commons** by *scientific name*. No downloads or CSV needed.
+- **`build_images.py`** — processes plates you've downloaded yourself (any
+  source) from a local folder + a CSV mapping.
+
+## fetch_plates.py — automatic, keyed by scientific name
+
+Commons hosts all 435 public-domain Havell plates. Each plate is filed under
+both `Category:The Birds of America` and a per-species
+`Category:{Genus species} (illustrations)` category, so intersecting them finds
+the right plate for a scientific name reliably (the files are *named* by
+Audubon's historical common names, so this taxonomic key matters).
+
+```bash
+cd tools
+# Fill in images for every species already listed in species_map.json:
+python fetch_plates.py --from-map
+
+# Or fetch specific species:
+python fetch_plates.py "Cardinalis cardinalis" "Cyanocitta cristata"
+
+# Bigger source images / overwrite cached:
+python fetch_plates.py --from-map --width 1600 --force
+```
+
+It downloads into `wall-node/images/` and updates `wall-node/species_map.json`.
+Already-present species are skipped (cached) unless `--force`. Misses (no plate
+on Commons for that binomial) are logged so you can map them by hand.
+
+No API key needed. It sends a descriptive `User-Agent` (Wikimedia policy) and
+sleeps briefly between requests. Images are public domain; credit "J.J. Audubon,
+*The Birds of America*, via Wikimedia Commons" if you wish.
+
+## build_images.py — from your own downloaded plates
+
 `build_images.py` turns high-res Audubon plates into panel-ready images and
 keeps `wall-node/species_map.json` in sync.
 

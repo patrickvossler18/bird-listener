@@ -35,9 +35,12 @@ export BL_LUX_OFF=5 BL_LUX_ON=15         # light-gate hysteresis
 ### Multi-bird collage
 
 Detections within `BL_MULTI_WINDOW_SECONDS` are grouped and shown together:
-1 bird → full-bleed plate + caption; 2–4 birds → a 2-column grid, each cell a
-plate with a small name strip (most-recent bird first). The panel only refreshes
-when the *set* of recent birds changes, and never more often than
+1 bird → full-bleed plate + caption; 2–4 birds → the plates are grouped as a
+centered row (most-recent first) with one shared name bar listing all of them at
+the bottom. In a collage the plates are auto-trimmed to their illustration
+(`BL_PLATE_TRIM=0` to disable) so the birds sit close together rather than
+floating in cream margin; full-sheet compositions are left intact. The panel
+only refreshes when the *set* of recent birds changes, and never more often than
 `BL_MIN_REFRESH_SECONDS`. Set `BL_MAX_BIRDS=1` for classic single-bird behavior.
 
 ## Run

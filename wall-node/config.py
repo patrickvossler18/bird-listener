@@ -53,6 +53,8 @@ class Config:
     # --- Display panel ---
     panel_width: int = _env_int("BL_PANEL_WIDTH", 800)
     panel_height: int = _env_int("BL_PANEL_HEIGHT", 480)
+    # Crop the empty cream margin off plates in a collage so birds sit closer.
+    plate_trim: bool = os.environ.get("BL_PLATE_TRIM", "1") != "0"
 
     # --- Light gate (BH1750, lux) ---
     # Hysteresis: turn off below `lux_off`, back on above `lux_on`.

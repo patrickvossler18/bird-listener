@@ -9,10 +9,9 @@ A "bird" is a dict: {common, scientific, when, plate_path (Path | None)}.
 """
 from __future__ import annotations
 
-from math import ceil
 from pathlib import Path
 
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageChops, ImageDraw, ImageFilter, ImageFont
 
 # Waveshare 7.3" E6 (Spectra 6) palette: black, white, red, yellow, blue, green.
 SPECTRA6_PALETTE = [
@@ -64,6 +63,41 @@ def _fit_font(draw, text, fonts_dir, max_width, start_size, min_size=10):
     return _font(fonts_dir, min_size)
 
 
+def _trim_to_subject(img: Image.Image, *, erode: int = 7, density: float = 0.04,
+                     pad_frac: float = 0.06, max_cut: float = 0.34) -> Image.Image:
+    """Crop a plate's empty cream margin down to the illustration.
+
+    Audubon plates vary: some birds fill the sheet, others sit in a big cream
+    field with engraved captions, plate numbers, and a ragged scan edge. We
+    build a content mask (saturated *or* dark pixels), erode it to remove thin
+    features (the scan-edge frame, caption text, specks), then keep the band of
+    rows/columns whose content density clears a threshold. A `max_cut` clamp
+    guarantees we never shave more than that fraction off any one side, so a
+    full-sheet composition is left essentially intact and we can't over-crop a
+    bird. Returns the original if the mask is empty.
+    """
+    img = img.convert("RGB")
+    W, Hh = img.size
+    _, S, V = img.convert("HSV").split()
+    mask = ImageChops.lighter(S.point(lambda p: 255 if p > 55 else 0),
+                              V.point(lambda p: 255 if p < 160 else 0))
+    mask = mask.filter(ImageFilter.MinFilter(erode))
+    col = list(mask.resize((W, 1), Image.BOX).get_flattened_data())
+    row = list(mask.resize((1, Hh), Image.BOX).get_flattened_data())
+    cs = [i for i, v in enumerate(col) if v > 255 * density]
+    rs = [i for i, v in enumerate(row) if v > 255 * density]
+    if not cs or not rs:
+        return img
+    l, r, t, b = cs[0], cs[-1], rs[0], rs[-1]
+    pw, ph = round(pad_frac * W), round(pad_frac * Hh)
+    l, t = max(0, l - pw), max(0, t - ph)
+    r, b = min(W, r + pw), min(Hh, b + ph)
+    # Clamp: never cut more than max_cut off any single side.
+    l, t = min(l, int(W * max_cut)), min(t, int(Hh * max_cut))
+    r, b = max(r, int(W * (1 - max_cut))), max(b, int(Hh * (1 - max_cut)))
+    return img.crop((l, t, r, b))
+
+
 def _fit_cover(img: Image.Image, w: int, h: int) -> Image.Image:
     """Scale + center-crop so the image fills WxH without distortion."""
     img = img.convert("RGB")
@@ -110,51 +144,85 @@ def _compose_single(width, height, bird, fonts_dir) -> Image.Image:
     return canvas
 
 
-def _compose_cell(width, height, bird, fonts_dir) -> Image.Image:
-    """One grid cell: plate on top, thin black common-name strip at the bottom."""
-    cell = Image.new("RGB", (width, height), (255, 255, 255))
-    strip_h = max(22, height // 6)
-    art_h = height - strip_h
+def _draw_name_bar(canvas, x0, y0, w, h, names, fonts_dir) -> None:
+    """One shared caption bar listing all bird names, centered, 1–2 lines."""
+    draw = ImageDraw.Draw(canvas)
+    draw.rectangle([x0, y0, x0 + w, y0 + h], fill=(0, 0, 0))
+    sep = "   ·   "
+    text = sep.join(names)
+    max_w = w - 28
 
-    plate = bird.get("plate_path")
-    if plate and Path(plate).exists():
-        cell.paste(_fit_cover(Image.open(plate), width, art_h), (0, 0))
-    else:
-        cell.paste(_no_plate_panel(width, art_h, fonts_dir), (0, 0))
+    font = _fit_font(draw, text, fonts_dir, max_w, min(30, h * 3 // 5), min_size=12)
+    lines = [text]
+    if draw.textlength(text, font=font) > max_w:
+        mid = (len(names) + 1) // 2  # balance names across two lines
+        lines = [sep.join(names[:mid]), sep.join(names[mid:])]
+        widest = max(lines, key=len)
+        font = _fit_font(draw, widest, fonts_dir, max_w, min(24, h * 2 // 5), min_size=12)
 
-    draw = ImageDraw.Draw(cell)
-    draw.rectangle([0, art_h, width, height], fill=(0, 0, 0))
-    common = bird.get("common") or bird.get("scientific") or ""
-    font = _fit_font(draw, common, fonts_dir, width - 16, strip_h * 3 // 5)
-    bbox = draw.textbbox((0, 0), common, font=font)
-    ty = art_h + (strip_h - (bbox[3] - bbox[1])) // 2 - bbox[1]
-    draw.text((8, ty), common, fill=(255, 255, 255), font=font)
-    return cell
+    line_h = font.size + 4
+    ty = y0 + (h - line_h * len(lines)) // 2
+    for line in lines:
+        lw = draw.textlength(line, font=font)
+        draw.text((x0 + (w - lw) // 2, ty), line, fill=(255, 255, 255), font=font)
+        ty += line_h
 
 
-def compose_birds(width, height, birds, fonts_dir) -> Image.Image:
-    """Compose 1..N birds into a single RGB frame (caller dithers via to_panel)."""
+def compose_birds(width, height, birds, fonts_dir, trim=True) -> Image.Image:
+    """Compose 1..N birds into a single RGB frame (caller dithers via to_panel).
+
+    Multiple birds: plates trimmed to their illustration and grouped centered in
+    the upper area, with one shared name bar listing all of them along the
+    bottom. `trim` toggles the margin crop.
+    """
     birds = list(birds)
     if not birds:
         return Image.new("RGB", (width, height), (255, 255, 255))
     if len(birds) == 1:
         return _compose_single(width, height, birds[0], fonts_dir)
 
-    cols = 2
-    rows = ceil(len(birds) / cols)
-    cw = width // cols
-    ch = height // rows
     canvas = Image.new("RGB", (width, height), (255, 255, 255))
-    for i, bird in enumerate(birds):
-        r, c = divmod(i, cols)
-        canvas.paste(_compose_cell(cw, ch, bird, fonts_dir), (c * cw, r * ch))
+    bar_h = max(56, height // 8)
+    art_h = height - bar_h
+    gap, vpad = 16, 12
 
-    # Thin separators between cells for a clean gallery look.
-    draw = ImageDraw.Draw(canvas)
-    for c in range(1, cols):
-        draw.line([(c * cw, 0), (c * cw, rows * ch)], fill=(0, 0, 0), width=2)
-    for r in range(1, rows):
-        draw.line([(0, r * ch), (width, r * ch)], fill=(0, 0, 0), width=2)
+    # Open plates and note each one's aspect ratio (default for missing plates).
+    plates: list[Image.Image | None] = []
+    aspects: list[float] = []
+    for bird in birds:
+        plate = bird.get("plate_path")
+        if plate and Path(plate).exists():
+            im = Image.open(plate)
+            if trim:
+                im = _trim_to_subject(im)
+            plates.append(im)
+            aspects.append(im.width / im.height)
+        else:
+            plates.append(None)
+            aspects.append(0.7)  # typical tall Audubon-plate aspect
+
+    # Scale every plate to one shared height so they line up; cap that height so
+    # the packed row fits the panel width, then center the block both ways.
+    n = len(birds)
+    avail_w = width - gap * (n - 1) - 2 * vpad
+    row_h = int(min(art_h - 2 * vpad, avail_w / max(sum(aspects), 0.01)))
+    row_h = max(1, row_h)
+
+    sized = []
+    for im, aspect in zip(plates, aspects):
+        w_i = max(1, int(row_h * aspect))
+        sized.append(im.resize((w_i, row_h)) if im is not None
+                     else _no_plate_panel(w_i, row_h, fonts_dir))
+
+    total_w = sum(s.width for s in sized) + gap * (n - 1)
+    x = (width - total_w) // 2
+    y = (art_h - row_h) // 2
+    for s in sized:
+        canvas.paste(s, (x, y))
+        x += s.width + gap
+
+    names = [b.get("common") or b.get("scientific") or "" for b in birds]
+    _draw_name_bar(canvas, 0, art_h, width, bar_h, names, fonts_dir)
     return canvas
 
 

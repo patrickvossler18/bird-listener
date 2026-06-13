@@ -95,7 +95,8 @@ class Service:
         names = ", ".join(b["common"] or b["scientific"] for b in birds)
         print(f"[render] drawing {len(birds)} bird(s): {names}")
         self.driver.show(to_panel(
-            compose_birds(CONFIG.panel_width, CONFIG.panel_height, birds, CONFIG.fonts_dir)
+            compose_birds(CONFIG.panel_width, CONFIG.panel_height, birds,
+                          CONFIG.fonts_dir, trim=CONFIG.plate_trim)
         ))
         self._rendered_sig = self.recent.signature(now)
         self._last_render_ts = now
@@ -198,7 +199,8 @@ def main(argv: list[str]) -> int:
             for s in args.once
         ]
         driver.show(to_panel(
-            compose_birds(CONFIG.panel_width, CONFIG.panel_height, birds, CONFIG.fonts_dir)
+            compose_birds(CONFIG.panel_width, CONFIG.panel_height, birds,
+                          CONFIG.fonts_dir, trim=CONFIG.plate_trim)
         ))
         return 0
 

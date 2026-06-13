@@ -1,0 +1,12 @@
+# Core (needed everywhere, incl. laptop dry-runs)
+Pillow>=10.0
+paho-mqtt>=2.0
+
+# Pi-only hardware libraries — installed on the wall node, optional elsewhere.
+# The service auto-detects their absence and falls back to mock drivers.
+#   smbus2>=0.4          # BH1750 light sensor over I2C
+#   RPi.GPIO             # pulled in by the Waveshare e-Paper library
+# The Waveshare 7.3" E6 driver (`waveshare_epd.epd7in3e`) is installed from
+# Waveshare's e-Paper repo, not PyPI:
+#   git clone https://github.com/waveshareteam/e-Paper
+#   then add e-Paper/RaspberryPi_JetsonNano/python/lib to PYTHONPATH

@@ -1,0 +1,20 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+
+# Wall-node runtime output
+wall-node/out/
+
+# Window-node runtime state (BirdNET-Go data, Mosquitto persistence)
+window-node/birdnet-go/config/config.yaml
+window-node/birdnet-go/data/
+window-node/mosquitto/data/
+
+# Image library is large/derived; keep the map, not the binaries.
+# (Comment this out if you'd rather commit the processed plates.)
+wall-node/images/*.jpg
+wall-node/images/*.png
+
+# Source plates for the pipeline
+tools/source_plates/

@@ -1,0 +1,38 @@
+# BirdNET-Go configuration — TEMPLATE / reference.
+#
+# BirdNET-Go writes its own fully-commented config.yaml into /config on first
+# run. The cleanest path: `docker compose up -d` once, then edit the generated
+# config/config.yaml (or use the web UI at http://<pi>:8080 → Settings) to match
+# the keys below. Schema can shift between versions, so reconcile against the
+# generated file rather than overwriting it blindly.
+#
+# The two things that matter for this project:
+#   1) your location + confidence threshold (detection quality)
+#   2) the MQTT output (so the wall node receives detections)
+
+birdnet:
+  # Your coordinates — BirdNET weights predictions to species likely near you.
+  latitude: 0.0
+  longitude: 0.0
+  # Minimum confidence (0..1) for a detection to count. Raise to cut false hits.
+  threshold: 0.7
+  sensitivity: 1.0
+  locale: en
+
+realtime:
+  # Audio capture — leave default to use the system default input (the USB
+  # sound card mapped via /dev/snd), or set the device explicitly.
+  audio:
+    source: ""        # "" = default capture device; or e.g. "hw:1,0"
+
+  # >>> The integration point for the wall node <<<
+  mqtt:
+    enabled: true
+    broker: tcp://mosquitto:1883   # the Mosquitto service in docker-compose
+    topic: birdnet/detection       # must match BL_MQTT_TOPIC on the wall node
+    # username: ""                 # only if you enabled auth in mosquitto.conf
+    # password: ""
+
+# Deferred (phone notifications): BirdNET-Go also supports push providers
+# (ntfy / Pushover / Telegram / Discord) under a notification/provider section —
+# enable later via the web UI without touching the wall node.

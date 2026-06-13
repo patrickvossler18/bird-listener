@@ -1,0 +1,26 @@
+services:
+  birdnet-go:
+    image: ghcr.io/tphakala/birdnet-go:nightly
+    container_name: birdnet-go
+    restart: unless-stopped
+    # Needs the host audio device. Adjust the device path to your USB sound card
+    # (check `arecord -l`; often card 1 -> /dev/snd is enough with this mapping).
+    devices:
+      - /dev/snd:/dev/snd
+    ports:
+      - "8080:8080"          # web UI / dashboard
+    volumes:
+      - ./birdnet-go/config:/config
+      - ./birdnet-go/data:/data
+    depends_on:
+      - mosquitto
+
+  mosquitto:
+    image: eclipse-mosquitto:2
+    container_name: mosquitto
+    restart: unless-stopped
+    ports:
+      - "1883:1883"          # MQTT (subscribed to by the wall node)
+    volumes:
+      - ./mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+      - ./mosquitto/data:/mosquitto/data

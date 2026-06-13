@@ -1,0 +1,21 @@
+[Unit]
+Description=Bird Listener wall-node e-ink display service
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=pi
+WorkingDirectory=/home/pi/bird-listener/wall-node
+Environment=BL_MQTT_HOST=birdpi.local
+Environment=BL_MIN_CONFIDENCE=0.65
+Environment=BL_DEBOUNCE_SECONDS=300
+Environment=BL_LUX_OFF=5
+Environment=BL_LUX_ON=15
+Environment=PYTHONPATH=/home/pi/e-Paper/RaspberryPi_JetsonNano/python/lib
+ExecStart=/home/pi/bird-listener/wall-node/.venv/bin/python display_service.py
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

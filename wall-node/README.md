@@ -4,19 +4,36 @@ Runs on the **Raspberry Pi Zero 2 W** inside the Waveshare RPi-Zero-PhotoPainter
 Subscribes to BirdNET-Go detections over MQTT and refreshes the 7.3" E6 panel
 with the matching Audubon plate; the BH1750 blanks it when the room is dark.
 
-## Install (on the Pi)
+## Install (on the Pi Zero)
+
+First copy the repo over from your Mac (no GitHub creds needed):
 
 ```bash
-sudo raspi-config        # enable SPI and I2C
-sudo apt install -y python3-pip python3-venv git
-git clone https://github.com/waveshareteam/e-Paper ~/e-Paper   # Waveshare driver
-
-cd ~/bird-listener/wall-node
-python3 -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
-pip install smbus2                                             # BH1750
-export PYTHONPATH=$HOME/e-Paper/RaspberryPi_JetsonNano/python/lib:$PYTHONPATH
+# from the repo root on your Mac (use the Zero's IP or hostname):
+rsync -av --delete --exclude '.git' --exclude '*/.venv' --exclude '*/out' \
+  --exclude '__pycache__' --exclude '*/data' ./ pi@<zero-ip>:~/bird-listener/
 ```
+
+Then bootstrap with one command — it enables SPI/I2C, installs the Waveshare
+e-Paper driver + Python deps, and installs the `bird-display` systemd service:
+
+```bash
+ssh pi@<zero-ip>
+cd ~/bird-listener
+BL_MQTT_HOST=192.168.4.107 bash wall-node/setup.sh   # point at birdpi
+```
+
+(Manual equivalent, if you'd rather: `sudo raspi-config` to enable SPI+I2C,
+`git clone https://github.com/waveshareteam/e-Paper ~/e-Paper`, then a venv with
+`pip install -r requirements.txt smbus2 spidev gpiozero lgpio` and
+`PYTHONPATH=$HOME/e-Paper/RaspberryPi_JetsonNano/python/lib`.)
+
+> **PhotoPainter PWR-pin quirk (important):** this board routes the e-paper
+> power-enable to **BCM27**, not the HAT-default **BCM18**. With the stock
+> Waveshare driver every panel refresh hangs forever in `ReadBusy()`. `setup.sh`
+> patches the cloned driver automatically; if you install by hand, edit
+> `…/waveshare_epd/epdconfig.py` and set `PWR_PIN = 27`. (Source: Waveshare RPi
+> Zero PhotoPainter manual, Hardware Connection.)
 
 ## Configure
 

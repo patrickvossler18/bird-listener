@@ -71,8 +71,9 @@ class Service:
     def __init__(self):
         self.species_map = load_species_map(CONFIG.species_map_path)
         self.driver = get_driver(CONFIG.out_dir, force_mock=CONFIG.force_mock_display)
-        self.light = LightSensor(
-            CONFIG.lux_off, CONFIG.lux_on, force_mock=CONFIG.force_mock_light
+        self.light = (
+            LightSensor(CONFIG.lux_off, CONFIG.lux_on, force_mock=CONFIG.force_mock_light)
+            if CONFIG.light_gate else None
         )
         self.recent = RecentBirds(CONFIG.multi_window_seconds, CONFIG.max_birds)
         self._lock = threading.Lock()
@@ -80,8 +81,9 @@ class Service:
         self._pending = False          # display set changed since last render
         self._last_render_ts = -1e9    # monotonic
         self._rendered_sig: tuple = ()
-        print(f"[service] display={self.driver.name} "
-              f"light={'mock' if self.light.is_mock else 'BH1750'} "
+        light_mode = ("off" if self.light is None
+                      else "mock" if self.light.is_mock else "BH1750")
+        print(f"[service] display={self.driver.name} light={light_mode} "
               f"max_birds={CONFIG.max_birds}")
 
     def _render_now(self, now) -> None:
@@ -96,7 +98,10 @@ class Service:
         print(f"[render] drawing {len(birds)} bird(s): {names}")
         self.driver.show(to_panel(
             compose_birds(CONFIG.panel_width, CONFIG.panel_height, birds,
-                          CONFIG.fonts_dir, trim=CONFIG.plate_trim)
+                          CONFIG.fonts_dir, trim=CONFIG.plate_trim,
+                          caption_scale=CONFIG.caption_scale),
+            dither=CONFIG.dither, sharpen=CONFIG.sharpen, rotate=CONFIG.rotate,
+            clean_bg=CONFIG.clean_bg,
         ))
         self._rendered_sig = self.recent.signature(now)
         self._last_render_ts = now
@@ -134,21 +139,23 @@ class Service:
             self._try_render(now)
 
     def tick_loop(self) -> None:
-        """Periodic: update the light gate and flush any time-gated render."""
+        """Periodic: update the (optional) light gate and flush any time-gated
+        render held back by the minimum refresh interval."""
         while True:
-            on = self.light.display_should_be_on()
+            on = self.light.display_should_be_on() if self.light is not None else True
             now = time.monotonic()
             with self._lock:
-                if on and not self._display_on:
-                    self._display_on = True
-                    print("[light] room lit -> display on")
-                    self._pending = self._pending or (
-                        self.recent.signature(now) != self._rendered_sig)
-                elif not on and self._display_on:
-                    self._display_on = False
-                    print("[light] room dark -> display off")
-                    self.driver.clear()
-                    self._rendered_sig = ()  # force redraw when lit again
+                if self.light is not None:
+                    if on and not self._display_on:
+                        self._display_on = True
+                        print("[light] room lit -> display on")
+                        self._pending = self._pending or (
+                            self.recent.signature(now) != self._rendered_sig)
+                    elif not on and self._display_on:
+                        self._display_on = False
+                        print("[light] room dark -> display off")
+                        self.driver.clear()
+                        self._rendered_sig = ()  # force redraw when lit again
                 self._try_render(now)
             time.sleep(CONFIG.light_poll_seconds)
 
@@ -200,7 +207,10 @@ def main(argv: list[str]) -> int:
         ]
         driver.show(to_panel(
             compose_birds(CONFIG.panel_width, CONFIG.panel_height, birds,
-                          CONFIG.fonts_dir, trim=CONFIG.plate_trim)
+                          CONFIG.fonts_dir, trim=CONFIG.plate_trim,
+                          caption_scale=CONFIG.caption_scale),
+            dither=CONFIG.dither, sharpen=CONFIG.sharpen, rotate=CONFIG.rotate,
+            clean_bg=CONFIG.clean_bg,
         ))
         return 0
 

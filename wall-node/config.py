@@ -55,8 +55,25 @@ class Config:
     panel_height: int = _env_int("BL_PANEL_HEIGHT", 480)
     # Crop the empty cream margin off plates in a collage so birds sit closer.
     plate_trim: bool = os.environ.get("BL_PLATE_TRIM", "1") != "0"
+    # Rotate the final frame before pushing to the panel (0 or 180). Use 180 if
+    # the panel is mounted upside-down in the frame.
+    rotate: int = _env_int("BL_ROTATE", 0)
+    # Floyd-Steinberg dithering on (default), or "none" for hard nearest-color
+    # (sharper edges, but visible color banding).
+    dither: bool = os.environ.get("BL_DITHER", "floyd").lower() != "none"
+    # Pre-sharpen (UnsharpMask) amount applied before dithering; 0 = off.
+    # ~0.6-1.2 crisps up detail so the dithered result reads sharper.
+    sharpen: float = _env_float("BL_SHARPEN", 0.0)
+    # Snap the cream paper background to pure white before dithering, so it
+    # doesn't dither into yellow/red speckle. On by default; BL_CLEAN_BG=0 off.
+    clean_bg: bool = os.environ.get("BL_CLEAN_BG", "1") != "0"
+    # Caption text scale for the single-bird name bar (1.0 = default size).
+    caption_scale: float = _env_float("BL_CAPTION_SCALE", 1.0)
 
     # --- Light gate (BH1750, lux) ---
+    # OFF by default: e-ink holds its image with no power, so blanking when the
+    # room is dark isn't needed. Set BL_LIGHT_GATE=1 to re-enable the sensor.
+    light_gate: bool = os.environ.get("BL_LIGHT_GATE", "0") == "1"
     # Hysteresis: turn off below `lux_off`, back on above `lux_on`.
     lux_off: float = _env_float("BL_LUX_OFF", 5.0)
     lux_on: float = _env_float("BL_LUX_ON", 15.0)

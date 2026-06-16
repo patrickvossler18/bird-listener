@@ -36,19 +36,34 @@ def _palette_image() -> Image.Image:
     return pal_img
 
 
-def _font(fonts_dir: Path, size: int) -> ImageFont.FreeTypeFont:
+_FONT_WARNED = False
+
+
+def _font(fonts_dir: Path, size: int) -> ImageFont.ImageFont:
     candidates = [
-        fonts_dir / "caption.ttf",
+        fonts_dir / "caption.ttf",                                    # bundled (preferred)
+        Path("/System/Library/Fonts/Supplemental/Georgia.ttf"),       # macOS dev box
         Path("/Library/Fonts/Georgia.ttf"),
-        Path("/System/Library/Fonts/Supplemental/Georgia.ttf"),
-        Path("/usr/share/fonts/truetype/dejavu/DejaVuSerif.ttf"),
+        Path("/usr/share/fonts/truetype/dejavu/DejaVuSerif.ttf"),     # Linux (fonts-dejavu)
+        Path("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"),
+        Path("/usr/share/fonts/truetype/liberation/LiberationSerif-Regular.ttf"),
     ]
     for path in candidates:
         if path.exists():
             try:
                 return ImageFont.truetype(str(path), size)
-            except OSError:
+            except Exception:
+                # OSError (bad font) or ImportError (Pillow built without/can't
+                # load libfreetype) — try the next candidate, then warn below.
                 continue
+    # No scalable font anywhere: Pillow's bitmap default ignores `size`, so text
+    # renders tiny and unscalable. Warn once so this never hides silently again.
+    global _FONT_WARNED
+    if not _FONT_WARNED:
+        _FONT_WARNED = True
+        print("[renderer] WARNING: no scalable TTF font found; using Pillow's "
+              "fixed bitmap font (text will be tiny). Bundle one at "
+              "wall-node/fonts/caption.ttf or `apt install fonts-dejavu`.")
     return ImageFont.load_default()
 
 
@@ -58,6 +73,23 @@ def _fit_font(draw, text, fonts_dir, max_width, start_size, min_size=10):
     while size > min_size:
         font = _font(fonts_dir, size)
         if draw.textlength(text, font=font) <= max_width:
+            return font
+        size -= 2
+    return _font(fonts_dir, min_size)
+
+
+def _fit_font_box(draw, text, fonts_dir, max_width, max_height, min_size=10):
+    """Largest font whose *rendered* text fits both max_width and max_height.
+
+    Sizes by the actual glyph bounding box (not the nominal point size), so the
+    text fills the available height regardless of the font's internal metrics —
+    i.e. as large as possible within a fixed-height caption bar.
+    """
+    size = max(min_size + 1, int(max_height * 1.7))
+    while size > min_size:
+        font = _font(fonts_dir, size)
+        b = draw.textbbox((0, 0), text, font=font)
+        if (b[2] - b[0]) <= max_width and (b[3] - b[1]) <= max_height:
             return font
         size -= 2
     return _font(fonts_dir, min_size)
@@ -119,9 +151,11 @@ def _no_plate_panel(width, height, fonts_dir) -> Image.Image:
     return panel
 
 
-def _compose_single(width, height, bird, fonts_dir) -> Image.Image:
+def _compose_single(width, height, bird, fonts_dir, caption_scale=1.0) -> Image.Image:
     canvas = Image.new("RGB", (width, height), (255, 255, 255))
-    caption_h = max(48, height // 10)
+    # Single-row name bar (names sit side by side, not stacked), so it can stay
+    # short while the text is large. Scales with caption_scale, capped at 1/4.
+    caption_h = min(int(max(52, height // 10) * caption_scale), height // 4)
     art_h = height - caption_h
 
     plate = bird.get("plate_path")
@@ -132,15 +166,44 @@ def _compose_single(width, height, bird, fonts_dir) -> Image.Image:
 
     draw = ImageDraw.Draw(canvas)
     draw.rectangle([0, art_h, width, height], fill=(0, 0, 0))
-    common = bird.get("common") or bird.get("scientific") or ""
-    sci = bird.get("scientific") or ""
+
+    common = (bird.get("common") or "").strip()
+    sci = (bird.get("scientific") or "").strip()
     when = bird.get("when")
-    name_font = _font(fonts_dir, caption_h * 9 // 20)
-    sci_font = _font(fonts_dir, caption_h * 5 // 20)
-    pad = 16
-    draw.text((pad, art_h + caption_h * 2 // 20), common, fill=(255, 255, 255), font=name_font)
-    sci_line = f"{sci}   ·   {when}" if when else sci
-    draw.text((pad, art_h + caption_h * 12 // 20), sci_line, fill=(220, 220, 220), font=sci_font)
+    has_common = bool(common) and common.lower() != sci.lower()
+
+    # Line 1 = common name (large). Line 2 = scientific name (+ time). When there
+    # is no distinct common name, the scientific name becomes the title and the
+    # second line is just the time — so the name is never printed twice.
+    title = common if has_common else sci
+    if has_common:
+        subtitle = f"{sci}   ·   {when}" if when else sci
+    else:
+        subtitle = str(when) if when else ""
+
+    # Horizontal layout: common name large on the left, scientific name smaller
+    # and right-aligned, both vertically centered — uses the panel's width
+    # instead of stacking the two lines vertically. Reserve the scientific name's
+    # width on the right first so the common name can't overrun it.
+    pad, gap = 24, 24
+    if subtitle:
+        sci_font = _fit_font_box(draw, subtitle, fonts_dir, (width - 2 * pad) * 2 // 5,
+                                 caption_h * 50 // 100, min_size=12)
+        sci_w = draw.textlength(subtitle, font=sci_font)
+    else:
+        sci_font, sci_w = None, 0
+    name_avail = width - 2 * pad - (sci_w + gap if sci_font else 0)
+    # Fill ~84% of the bar height so the name is as large as the bar allows.
+    name_font = _fit_font_box(draw, title, fonts_dir, name_avail,
+                              caption_h * 84 // 100, min_size=18)
+
+    nb = draw.textbbox((0, 0), title, font=name_font)
+    ny = art_h + (caption_h - (nb[3] - nb[1])) // 2 - nb[1]
+    draw.text((pad, ny), title, fill=(255, 255, 255), font=name_font)
+    if sci_font:
+        sb = draw.textbbox((0, 0), subtitle, font=sci_font)
+        sy = art_h + (caption_h - (sb[3] - sb[1])) // 2 - sb[1]
+        draw.text((width - pad - sci_w, sy), subtitle, fill=(220, 220, 220), font=sci_font)
     return canvas
 
 
@@ -168,18 +231,19 @@ def _draw_name_bar(canvas, x0, y0, w, h, names, fonts_dir) -> None:
         ty += line_h
 
 
-def compose_birds(width, height, birds, fonts_dir, trim=True) -> Image.Image:
+def compose_birds(width, height, birds, fonts_dir, trim=True, caption_scale=1.0) -> Image.Image:
     """Compose 1..N birds into a single RGB frame (caller dithers via to_panel).
 
     Multiple birds: plates trimmed to their illustration and grouped centered in
     the upper area, with one shared name bar listing all of them along the
-    bottom. `trim` toggles the margin crop.
+    bottom. `trim` toggles the margin crop. `caption_scale` enlarges the
+    single-bird name bar.
     """
     birds = list(birds)
     if not birds:
         return Image.new("RGB", (width, height), (255, 255, 255))
     if len(birds) == 1:
-        return _compose_single(width, height, birds[0], fonts_dir)
+        return _compose_single(width, height, birds[0], fonts_dir, caption_scale)
 
     canvas = Image.new("RGB", (width, height), (255, 255, 255))
     bar_h = max(56, height // 8)
@@ -226,8 +290,47 @@ def compose_birds(width, height, birds, fonts_dir, trim=True) -> Image.Image:
     return canvas
 
 
-def to_panel(frame: Image.Image) -> Image.Image:
-    """Quantize an RGB frame to the Spectra-6 palette with Floyd-Steinberg dithering."""
-    return frame.convert("RGB").quantize(
-        palette=_palette_image(), dither=Image.Dither.FLOYDSTEINBERG
+def to_panel(frame: Image.Image, *, dither: bool = True, sharpen: float = 0.0,
+             rotate: int = 0, clean_bg: bool = True) -> Image.Image:
+    """Quantize an RGB frame to the Spectra-6 palette, ready for the panel.
+
+    dither   Floyd-Steinberg dithering (True) or hard nearest-color (False:
+             sharper edges but visible color banding).
+    sharpen  UnsharpMask amount applied before quantizing (0 = off); crisps up
+             detail so the dithered result reads sharper.
+    rotate   Rotate the final frame this many degrees (0 or 180) for a panel
+             mounted upside-down. 180 is a lossless flip.
+    clean_bg Snap the near-white/cream paper to pure white before dithering so
+             the background doesn't dither into yellow/red speckle.
+    """
+    img = frame.convert("RGB")
+    if clean_bg:
+        # Flood-fill the paper background to pure white from many points along
+        # every edge. The background (cream paper + white scan margins) is
+        # connected to the borders, so this whitens it uniformly — no cream/white
+        # seam — while the saturated/dark bird + foliage stop the fill.
+        img = img.copy()
+        w, h = img.size
+        steps = 9
+        seeds = []
+        for i in range(steps):
+            x, y = w * i // (steps - 1), h * i // (steps - 1)
+            seeds += [(min(x, w - 1), 0), (min(x, w - 1), h - 1),
+                      (0, min(y, h - 1)), (w - 1, min(y, h - 1))]
+        for xy in seeds:
+            px = img.getpixel(xy)
+            # Only seed from a light background pixel, so we never flood the dark
+            # caption bar (or a dark plate edge) into white.
+            if sum(px[:3]) >= 3 * 170:
+                ImageDraw.floodfill(img, xy, (255, 255, 255), thresh=48)
+    if sharpen and sharpen > 0:
+        img = img.filter(ImageFilter.UnsharpMask(
+            radius=2, percent=int(round(sharpen * 100)), threshold=2))
+    out = img.quantize(
+        palette=_palette_image(),
+        dither=Image.Dither.FLOYDSTEINBERG if dither else Image.Dither.NONE,
     )
+    if rotate % 360:
+        out = (out.transpose(Image.Transpose.ROTATE_180)
+               if rotate % 360 == 180 else out.rotate(-rotate % 360, expand=False))
+    return out

@@ -8,20 +8,47 @@ the wall node subscribes to.
 
 ## Setup
 
+### 0. Get the code onto the Pi
+
+The repo is private, so rather than cloning (which needs GitHub creds on the Pi)
+just copy it from your Mac over SSH — no credentials needed:
+
+```bash
+# from the repo root on your Mac:
+rsync -av --delete \
+  --exclude '.git' --exclude '*/.venv' --exclude '*/out' \
+  --exclude '__pycache__' --exclude '*/data' \
+  ./ pi@birdpi.local:~/bird-listener/
+```
+
+(Re-run that anytime to push updates. Alternatively, generate a GitHub token and
+`git clone` on the Pi.)
+
+### 1. Bootstrap (one command)
+
+SSH in and run the bootstrap — it installs Docker, adds you to the docker group,
+installs `mosquitto-clients`, and brings the stack up:
+
+```bash
+ssh pi@birdpi.local
+cd ~/bird-listener
+bash window-node/setup.sh
+```
+
+This starts **BirdNET-Go** (web UI at `http://birdpi.local:8080`) and
+**Mosquitto** (MQTT on `:1883`). Log out/in once afterward so `docker` works
+without `sudo`.
+
+### 2. Configure detection + MQTT output
+
 1. Plug in the USB sound card + mic. Confirm it's seen: `arecord -l`.
-2. Bring the stack up:
-   ```bash
-   cd window-node
-   docker compose up -d
-   ```
-   This starts **BirdNET-Go** (web UI at `http://<pi>:8080`) and **Mosquitto**
-   (MQTT on `:1883`).
-3. Configure detection + MQTT output. BirdNET-Go generates
-   `birdnet-go/config/config.yaml` on first run — edit it (or use the web UI →
-   Settings) to set your **latitude/longitude**, **threshold**, and enable the
-   **MQTT** output. See `birdnet-go/config/config.yaml.template` for the exact
-   keys (broker `tcp://mosquitto:1883`, topic `birdnet/detection`).
-4. Restart BirdNET-Go to pick up config changes: `docker compose restart birdnet-go`.
+2. BirdNET-Go generates `birdnet-go/config/config.yaml` on first run — edit it
+   (or use the web UI → Settings) to set your **latitude/longitude**,
+   **threshold**, and enable the **MQTT** output. See
+   `birdnet-go/config/config.yaml.template` for the exact keys (broker
+   `tcp://mosquitto:1883`, topic `birdnet/detection`).
+3. Restart BirdNET-Go to pick up config changes:
+   `docker compose restart birdnet-go`.
 
 ## Verify
 

@@ -190,14 +190,29 @@ def _expand_to_aspect(box, W, H, target_w, target_h):
 
 
 def _smart_fill(plate_path, img: Image.Image, w: int, h: int) -> Image.Image:
-    """Fill WxH with the plate, framed on its subject: expand the cached subject
-    box to WxH's aspect, crop, resize. Falls back to a plain center cover-crop
-    when no subject box is cached."""
+    """Frame the plate's subject into WxH without distortion.
+
+    Expand the cached subject box to WxH's aspect and crop. If that box reached
+    the exact target aspect (the subject was small enough to grow around), resize
+    to fill. If it couldn't — a tall/wide subject that hit the image edge — the
+    cropped region is off-aspect, so *contain* it (preserve proportions, pad with
+    white) rather than stretch it. Falls back to a center cover-crop when no box
+    is cached."""
+    img = img.convert("RGB")
     box = _subject_box(plate_path, img)
     if box is None:
         return _fit_cover(img, w, h)
     ex, ey, ew, eh = _expand_to_aspect(box, img.width, img.height, w, h)
-    return img.convert("RGB").crop((ex, ey, ex + ew, ey + eh)).resize((w, h))
+    crop = img.crop((ex, ey, ex + ew, ey + eh))
+    if abs(crop.width / crop.height - w / h) < 0.02:
+        return crop.resize((w, h))                       # reached target aspect: fill
+    # Off-aspect: contain on white so the whole subject shows, undistorted.
+    scale = min(w / crop.width, h / crop.height)
+    fitted = crop.resize((max(1, round(crop.width * scale)),
+                          max(1, round(crop.height * scale))))
+    canvas = Image.new("RGB", (w, h), (255, 255, 255))
+    canvas.paste(fitted, ((w - fitted.width) // 2, (h - fitted.height) // 2))
+    return canvas
 
 
 def _no_plate_panel(width, height, fonts_dir) -> Image.Image:

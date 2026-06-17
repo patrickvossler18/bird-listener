@@ -1,0 +1,2363 @@
+{
+"model": "isnet-general-use",
+"boxes": {
+"acanthis_flammea.jpg": [
+392,
+482,
+544,
+843
+],
+"acanthis_hornemanni.jpg": [
+367,
+568,
+555,
+805
+],
+"accipiter_gentilis.jpg": [
+77,
+143,
+1130,
+1663
+],
+"accipiter_striatus.jpg": [
+339,
+476,
+648,
+877
+],
+"actitis_macularius.jpg": [
+303,
+210,
+796,
+480
+],
+"aegolius_acadicus.jpg": [
+377,
+480,
+534,
+892
+],
+"aegolius_funereus.jpg": [
+327,
+518,
+664,
+761
+],
+"aethia_cristatella.jpg": [
+188,
+239,
+841,
+466
+],
+"agelaius_phoeniceus.jpg": [
+142,
+291,
+967,
+1220
+],
+"aix_sponsa.jpg": [
+66,
+80,
+1183,
+1736
+],
+"alca_torda.jpg": [
+313,
+271,
+638,
+399
+],
+"alle_alle.jpg": [
+308,
+256,
+629,
+396
+],
+"alligator_mississippiensis.jpg": [
+0,
+0,
+1280,
+1788
+],
+"american_goldfinch.jpg": [
+341,
+501,
+584,
+887
+],
+"american_robin.jpg": [
+35,
+35,
+1232,
+1751
+],
+"ammodramus_caudacutus.jpg": [
+371,
+465,
+577,
+907
+],
+"ammodramus_henslowii.jpg": [
+377,
+511,
+556,
+870
+],
+"ammodramus_maritimus.jpg": [
+345,
+452,
+568,
+958
+],
+"ammodramus_savannarum.jpg": [
+349,
+787,
+561,
+588
+],
+"anas_acuta.jpg": [
+218,
+155,
+845,
+623
+],
+"anas_carolinensis.jpg": [
+332,
+252,
+604,
+392
+],
+"anas_platyrhynchos.jpg": [
+7,
+42,
+1261,
+794
+],
+"anas_rubripes.jpg": [
+144,
+138,
+976,
+629
+],
+"anhinga_anhinga.jpg": [
+122,
+79,
+1075,
+1694
+],
+"anous_minutus.jpg": [
+391,
+268,
+450,
+345
+],
+"anser_albifrons.jpg": [
+10,
+172,
+1247,
+621
+],
+"anser_caerulescens.jpg": [
+27,
+192,
+1231,
+595
+],
+"anthus_rubescens.jpg": [
+403,
+317,
+476,
+254
+],
+"antigone_canadensis.jpg": [
+134,
+74,
+1014,
+1675
+],
+"antrostomus_carolinensis.jpg": [
+150,
+330,
+967,
+1205
+],
+"antrostomus_vociferus.jpg": [
+158,
+300,
+925,
+1238
+],
+"aphelocoma_coerulescens.jpg": [
+193,
+318,
+878,
+1247
+],
+"aquila_chrysaetos.jpg": [
+40,
+76,
+1209,
+1425
+],
+"aramus_guarauna.jpg": [
+134,
+155,
+1023,
+514
+],
+"archilochus_colubris.jpg": [
+126,
+296,
+1019,
+1192
+],
+"ardea_alba.jpg": [
+37,
+165,
+1211,
+675
+],
+"ardea_herodias.jpg": [
+0,
+170,
+1270,
+1666
+],
+"ardenna_gravis.jpg": [
+343,
+257,
+548,
+368
+],
+"arenaria_interpres.jpg": [
+306,
+221,
+656,
+453
+],
+"asio_flammeus.jpg": [
+222,
+135,
+814,
+599
+],
+"asio_otus.jpg": [
+448,
+547,
+421,
+759
+],
+"astur_cooperii.jpg": [
+63,
+336,
+1146,
+1474
+],
+"aythya_americana.jpg": [
+256,
+122,
+757,
+611
+],
+"aythya_collaris.jpg": [
+338,
+230,
+581,
+451
+],
+"aythya_marila.jpg": [
+321,
+237,
+630,
+397
+],
+"aythya_valisineria.jpg": [
+45,
+107,
+1217,
+680
+],
+"bartramia_longicauda.jpg": [
+306,
+199,
+667,
+483
+],
+"black_capped_chickadee.jpg": [
+355,
+471,
+578,
+921
+],
+"blue_jay.jpg": [
+195,
+425,
+903,
+1039
+],
+"bombycilla_cedrorum.jpg": [
+384,
+531,
+531,
+820
+],
+"bombycilla_garrulus.jpg": [
+386,
+488,
+553,
+850
+],
+"bonasa_umbellus.jpg": [
+3,
+5,
+1261,
+846
+],
+"botaurus_exilis.jpg": [
+322,
+245,
+660,
+423
+],
+"botaurus_lentiginosus.jpg": [
+190,
+74,
+892,
+715
+],
+"brachyramphus_marmoratus.jpg": [
+504,
+324,
+384,
+243
+],
+"branta_bernicla.jpg": [
+21,
+216,
+1162,
+557
+],
+"branta_hutchinsii.jpg": [
+260,
+373,
+804,
+983
+],
+"branta_leucopsis.jpg": [
+43,
+135,
+1196,
+667
+],
+"bubo_scandiacus.jpg": [
+263,
+118,
+966,
+1630
+],
+"bubo_virginianus.jpg": [
+29,
+162,
+1185,
+1660
+],
+"bucephala_albeola.jpg": [
+302,
+242,
+655,
+415
+],
+"bucephala_clangula.jpg": [
+189,
+138,
+903,
+594
+],
+"bucephala_islandica.jpg": [
+347,
+289,
+588,
+354
+],
+"buteo_jamaicensis.jpg": [
+8,
+10,
+472,
+690
+],
+"buteo_lagopus.jpg": [
+157,
+40,
+978,
+1746
+],
+"buteo_lineatus.jpg": [
+64,
+176,
+1158,
+1585
+],
+"buteo_platypterus.jpg": [
+24,
+21,
+1209,
+1813
+],
+"buteo_swainsoni.jpg": [
+106,
+319,
+1065,
+1162
+],
+"butorides_virescens.jpg": [
+273,
+118,
+717,
+677
+],
+"calamospiza_melanocorys.jpg": [
+391,
+488,
+522,
+848
+],
+"calcarius_lapponicus.jpg": [
+346,
+407,
+591,
+225
+],
+"calcarius_ornatus.jpg": [
+355,
+440,
+570,
+940
+],
+"calidris_alba.jpg": [
+318,
+355,
+621,
+270
+],
+"calidris_alpina.jpg": [
+339,
+263,
+624,
+366
+],
+"calidris_ferruginea.jpg": [
+323,
+264,
+590,
+389
+],
+"calidris_fuscicollis.jpg": [
+316,
+284,
+599,
+347
+],
+"calidris_himantopus.jpg": [
+348,
+344,
+570,
+263
+],
+"calidris_maritima.jpg": [
+303,
+262,
+633,
+384
+],
+"calidris_melanotos.jpg": [
+450,
+353,
+453,
+262
+],
+"calidris_minutilla.jpg": [
+301,
+85,
+684,
+605
+],
+"calidris_pusilla.jpg": [
+339,
+368,
+583,
+272
+],
+"calidris_subruficollis.jpg": [
+324,
+316,
+624,
+318
+],
+"calidris_virgata.jpg": [
+315,
+494,
+631,
+816
+],
+"callipepla_californica.jpg": [
+353,
+308,
+601,
+310
+],
+"calocitta_colliei.jpg": [
+100,
+52,
+1099,
+1784
+],
+"calypte_anna.jpg": [
+359,
+472,
+594,
+909
+],
+"campephilus_principalis.jpg": [
+42,
+17,
+1174,
+1831
+],
+"camptorhynchus_labradorius.jpg": [
+234,
+125,
+758,
+634
+],
+"canachites_canadensis.jpg": [
+206,
+59,
+1016,
+737
+],
+"caracara_plancus_cheriway.jpg": [
+76,
+25,
+1120,
+1767
+],
+"cardellina_canadensis.jpg": [
+360,
+527,
+581,
+796
+],
+"cardellina_pusilla.jpg": [
+362,
+454,
+599,
+936
+],
+"cathartes_aura.jpg": [
+40,
+9,
+1223,
+1787
+],
+"catharus_fuscescens.jpg": [
+368,
+467,
+546,
+924
+],
+"catharus_guttatus.jpg": [
+398,
+472,
+531,
+900
+],
+"centrocercus_urophasianus.jpg": [
+37,
+4,
+1184,
+802
+],
+"cepphus_grylle.jpg": [
+321,
+193,
+635,
+498
+],
+"certhia_americana.jpg": [
+384,
+546,
+574,
+876
+],
+"chaetura_pelagica.jpg": [
+358,
+473,
+578,
+904
+],
+"charadrius_melodus.jpg": [
+324,
+422,
+612,
+201
+],
+"charadrius_montanus.jpg": [
+337,
+402,
+589,
+210
+],
+"charadrius_semipalmatus.jpg": [
+335,
+330,
+598,
+275
+],
+"charadrius_vociferus.jpg": [
+326,
+267,
+624,
+370
+],
+"charadrius_wilsonia.jpg": [
+316,
+337,
+636,
+306
+],
+"chlidonias_niger.jpg": [
+390,
+490,
+535,
+853
+],
+"chordeiles_minor.jpg": [
+178,
+327,
+953,
+1208
+],
+"chroicocephalus_philadelphia.jpg": [
+266,
+416,
+771,
+1019
+],
+"cinclus_mexicanus.jpg": [
+303,
+250,
+638,
+411
+],
+"circus_hudsonius.jpg": [
+82,
+59,
+1191,
+1789
+],
+"cistothorus_palustris.jpg": [
+385,
+490,
+474,
+906
+],
+"cistothorus_stellaris.jpg": [
+351,
+420,
+597,
+950
+],
+"clangula_hyemalis.jpg": [
+163,
+199,
+952,
+448
+],
+"coccyzus_americanus.jpg": [
+198,
+104,
+854,
+671
+],
+"coccyzus_erythropthalmus.jpg": [
+233,
+137,
+817,
+624
+],
+"colaptes_auratus.jpg": [
+189,
+321,
+934,
+1231
+],
+"colinus_virginianus.jpg": [
+38,
+31,
+1207,
+817
+],
+"columbina_passerina.jpg": [
+156,
+281,
+974,
+1224
+],
+"contopus_cooperi.jpg": [
+380,
+501,
+555,
+869
+],
+"contopus_virens.jpg": [
+321,
+472,
+585,
+942
+],
+"conuropsis_carolinensis.jpg": [
+0,
+0,
+1280,
+1760
+],
+"coragyps_atratus.jpg": [
+188,
+145,
+906,
+642
+],
+"corthylio_calendula.jpg": [
+337,
+477,
+603,
+941
+],
+"corvus_brachyrhynchos.jpg": [
+61,
+19,
+1177,
+1755
+],
+"corvus_corax.jpg": [
+49,
+73,
+1182,
+1696
+],
+"corvus_ossifragus.jpg": [
+56,
+23,
+1183,
+1729
+],
+"coturnicops_noveboracensis.jpg": [
+317,
+187,
+621,
+442
+],
+"cygnus_buccinator.jpg": [
+29,
+81,
+1167,
+589
+],
+"cygnus_columbianus.jpg": [
+49,
+155,
+1199,
+669
+],
+"dendragapus_obscurus.jpg": [
+105,
+214,
+1083,
+590
+],
+"dolichonyx_oryzivorus.jpg": [
+367,
+517,
+541,
+851
+],
+"dryobates_pubescens.jpg": [
+204,
+319,
+908,
+1171
+],
+"dryocopus_pileatus.jpg": [
+32,
+14,
+1209,
+1810
+],
+"dumetella_carolinensis.jpg": [
+371,
+511,
+541,
+886
+],
+"eastern_bluebird.jpg": [
+349,
+506,
+586,
+893
+],
+"ectopistes_migratorius.jpg": [
+173,
+354,
+953,
+1183
+],
+"egretta_caerulea.jpg": [
+318,
+202,
+802,
+529
+],
+"egretta_rufescens.jpg": [
+44,
+62,
+1165,
+762
+],
+"egretta_thula.jpg": [
+143,
+340,
+980,
+1147
+],
+"egretta_tricolor.jpg": [
+401,
+130,
+636,
+640
+],
+"elanoides_forficatus.jpg": [
+185,
+115,
+870,
+672
+],
+"elanus_leucurus.jpg": [
+178,
+279,
+935,
+1379
+],
+"empidonax_traillii.jpg": [
+377,
+521,
+526,
+875
+],
+"empidonax_virescens.jpg": [
+383,
+445,
+532,
+885
+],
+"eremophila_alpestris.jpg": [
+305,
+180,
+637,
+424
+],
+"eudocimus_albus.jpg": [
+187,
+124,
+866,
+651
+],
+"eudocimus_ruber.jpg": [
+165,
+100,
+933,
+664
+],
+"euphagus_carolinus.jpg": [
+144,
+311,
+962,
+1201
+],
+"falco_columbarius.jpg": [
+366,
+594,
+494,
+798
+],
+"falco_peregrinus.jpg": [
+46,
+101,
+1158,
+713
+],
+"falco_rusticolus.jpg": [
+171,
+85,
+1041,
+1641
+],
+"falco_sparverius.jpg": [
+162,
+311,
+972,
+1223
+],
+"fratercula_arctica.jpg": [
+313,
+275,
+615,
+386
+],
+"fratercula_cirrhata.jpg": [
+302,
+228,
+632,
+445
+],
+"fratercula_corniculata.jpg": [
+316,
+248,
+642,
+420
+],
+"fregata_magnificens.jpg": [
+68,
+39,
+1152,
+1717
+],
+"fulica_americana.jpg": [
+302,
+241,
+661,
+406
+],
+"fulmarus_glacialis.jpg": [
+317,
+251,
+525,
+411
+],
+"gallinago_delicata.jpg": [
+302,
+250,
+644,
+388
+],
+"gallinula_galeata.jpg": [
+303,
+264,
+624,
+390
+],
+"gavia_immer.jpg": [
+125,
+107,
+1110,
+719
+],
+"gavia_pacifica.jpg": [
+2,
+71,
+1254,
+752
+],
+"gavia_stellata.jpg": [
+192,
+127,
+931,
+648
+],
+"gelochelidon_nilotica.jpg": [
+349,
+498,
+665,
+843
+],
+"geothlypis_formosa.jpg": [
+362,
+436,
+556,
+915
+],
+"geothlypis_philadelphia.jpg": [
+348,
+537,
+586,
+840
+],
+"geothlypis_trichas.jpg": [
+360,
+452,
+570,
+926
+],
+"gymnogyps_californianus.jpg": [
+42,
+77,
+1202,
+1755
+],
+"haematopus_bachmani.jpg": [
+212,
+224,
+801,
+525
+],
+"haematopus_palliatus.jpg": [
+300,
+259,
+651,
+398
+],
+"haemorhous_purpureus.jpg": [
+363,
+544,
+580,
+766
+],
+"haliaeetus_leucocephalus.jpg": [
+85,
+41,
+1068,
+1788
+],
+"helmitheros_vermivorum.jpg": [
+377,
+489,
+555,
+924
+],
+"hesperiphona_vespertina.jpg": [
+401,
+471,
+509,
+818
+],
+"himantopus_mexicanus.jpg": [
+456,
+243,
+432,
+389
+],
+"hirundo_rustica.jpg": [
+363,
+645,
+570,
+752
+],
+"histrionicus_histrionicus.jpg": [
+223,
+207,
+886,
+506
+],
+"house_finch.jpg": [
+345,
+418,
+625,
+972
+],
+"hydrobates_pelagicus.jpg": [
+329,
+319,
+606,
+316
+],
+"hylocichla_mustelina.jpg": [
+362,
+472,
+577,
+906
+],
+"icteria_virens.jpg": [
+160,
+329,
+955,
+1222
+],
+"icterus_bullockii.jpg": [
+356,
+430,
+582,
+949
+],
+"icterus_galbula.jpg": [
+151,
+336,
+996,
+1199
+],
+"icterus_spurius.jpg": [
+127,
+351,
+990,
+1221
+],
+"ictinia_mississippiensis.jpg": [
+168,
+359,
+820,
+1129
+],
+"ixoreus_naevius.jpg": [
+350,
+494,
+633,
+861
+],
+"junco_hyemalis.jpg": [
+455,
+523,
+466,
+798
+],
+"lagopus_lagopus.jpg": [
+265,
+216,
+948,
+548
+],
+"lagopus_leucura.jpg": [
+301,
+247,
+681,
+429
+],
+"lagopus_muta.jpg": [
+286,
+180,
+678,
+514
+],
+"lanius_borealis.jpg": [
+152,
+324,
+979,
+1201
+],
+"lanius_ludovicianus.jpg": [
+192,
+369,
+876,
+1177
+],
+"larus_delawarensis.jpg": [
+250,
+218,
+770,
+472
+],
+"larus_glaucoides.jpg": [
+227,
+157,
+834,
+584
+],
+"larus_hyperboreus.jpg": [
+66,
+149,
+1118,
+625
+],
+"larus_marinus.jpg": [
+40,
+94,
+1201,
+1689
+],
+"larus_smithsonianus.jpg": [
+57,
+114,
+1166,
+1681
+],
+"laterallus_jamaicensis.jpg": [
+342,
+245,
+614,
+382
+],
+"leiothlypis_celata.jpg": [
+362,
+449,
+576,
+924
+],
+"leiothlypis_peregrina.jpg": [
+400,
+506,
+459,
+887
+],
+"leiothlypis_ruficapilla.jpg": [
+405,
+480,
+493,
+894
+],
+"leuconotopicus_borealis.jpg": [
+369,
+470,
+571,
+903
+],
+"leuconotopicus_villosus.jpg": [
+100,
+239,
+1057,
+1400
+],
+"leucophaeus_atricilla.jpg": [
+382,
+243,
+547,
+395
+],
+"limnodromus_griseus.jpg": [
+325,
+285,
+610,
+356
+],
+"limnothlypis_swainsonii.jpg": [
+346,
+456,
+558,
+928
+],
+"limosa_fedoa.jpg": [
+284,
+245,
+687,
+416
+],
+"limosa_haemastica.jpg": [
+310,
+251,
+642,
+382
+],
+"lophodytes_cucullatus.jpg": [
+229,
+166,
+796,
+531
+],
+"loxia_curvirostra.jpg": [
+156,
+349,
+982,
+1245
+],
+"loxia_leucoptera.jpg": [
+372,
+552,
+536,
+750
+],
+"mareca_americana.jpg": [
+349,
+231,
+597,
+440
+],
+"mareca_strepera.jpg": [
+252,
+199,
+780,
+500
+],
+"megaceryle_alcyon.jpg": [
+178,
+341,
+937,
+1178
+],
+"megascops_asio.jpg": [
+168,
+300,
+975,
+1216
+],
+"melanerpes_erythrocephalus.jpg": [
+124,
+425,
+980,
+1090
+],
+"melanitta_americana.jpg": [
+291,
+244,
+697,
+446
+],
+"melanitta_deglandi.jpg": [
+139,
+142,
+976,
+604
+],
+"melanitta_perspicillata.jpg": [
+156,
+140,
+955,
+617
+],
+"meleagris_gallopavo.jpg": [
+0,
+0,
+1280,
+1907
+],
+"melospiza_georgiana.jpg": [
+368,
+485,
+575,
+855
+],
+"melospiza_lincolnii.jpg": [
+353,
+463,
+572,
+920
+],
+"melospiza_melodia.jpg": [
+360,
+457,
+562,
+893
+],
+"mergellus_albellus.jpg": [
+175,
+306,
+963,
+1170
+],
+"mergus_merganser.jpg": [
+33,
+82,
+1147,
+716
+],
+"mergus_serrator.jpg": [
+40,
+93,
+1185,
+742
+],
+"mimus_polyglottos.jpg": [
+102,
+127,
+1063,
+1575
+],
+"mniotilta_varia.jpg": [
+366,
+432,
+541,
+931
+],
+"molothrus_ater.jpg": [
+347,
+293,
+585,
+305
+],
+"morus_bassanus.jpg": [
+30,
+172,
+1206,
+663
+],
+"mourning_dove.jpg": [
+158,
+316,
+955,
+1255
+],
+"mycteria_americana.jpg": [
+51,
+121,
+1193,
+1568
+],
+"myiarchus_crinitus.jpg": [
+388,
+466,
+528,
+887
+],
+"nannopterum_auritum.jpg": [
+254,
+152,
+806,
+574
+],
+"northern_cardinal.jpg": [
+378,
+573,
+545,
+765
+],
+"numenius_americanus.jpg": [
+252,
+37,
+986,
+775
+],
+"numenius_borealis.jpg": [
+328,
+259,
+618,
+385
+],
+"numenius_hudsonicus.jpg": [
+242,
+134,
+800,
+645
+],
+"nyctanassa_violacea.jpg": [
+61,
+59,
+1157,
+1765
+],
+"nycticorax_nycticorax.jpg": [
+31,
+41,
+1221,
+784
+],
+"oceanites_oceanicus.jpg": [
+327,
+275,
+610,
+353
+],
+"oceanodroma_leucorhoa.jpg": [
+323,
+263,
+599,
+392
+],
+"onychoprion_fuscatus.jpg": [
+310,
+264,
+638,
+383
+],
+"oporornis_agilis.jpg": [
+387,
+556,
+495,
+797
+],
+"oreortyx_pictus.jpg": [
+297,
+318,
+668,
+308
+],
+"oxyura_jamaicensis.jpg": [
+210,
+196,
+823,
+479
+],
+"pagophila_eburnea.jpg": [
+170,
+282,
+904,
+437
+],
+"pandion_haliaetus.jpg": [
+85,
+14,
+1075,
+1792
+],
+"parabuteo_unicinctus.jpg": [
+296,
+103,
+713,
+684
+],
+"parkesia_motacilla.jpg": [
+426,
+497,
+453,
+796
+],
+"passerculus_sandwichensis.jpg": [
+340,
+449,
+589,
+959
+],
+"passerella_iliaca.jpg": [
+327,
+277,
+584,
+366
+],
+"passerina_caerulea.jpg": [
+164,
+321,
+975,
+1216
+],
+"passerina_ciris.jpg": [
+389,
+540,
+535,
+774
+],
+"passerina_cyanea.jpg": [
+336,
+416,
+595,
+938
+],
+"patagioenas_fasciata.jpg": [
+164,
+265,
+952,
+1291
+],
+"patagioenas_leucocephala.jpg": [
+156,
+330,
+977,
+1215
+],
+"pelecanus_erythrorhynchos.jpg": [
+87,
+45,
+1114,
+1716
+],
+"pelecanus_occidentalis.jpg": [
+85,
+76,
+1169,
+1728
+],
+"perisoreus_canadensis.jpg": [
+161,
+312,
+983,
+1230
+],
+"petrochelidon_pyrrhonota.jpg": [
+348,
+426,
+594,
+963
+],
+"peucaea_aestivalis.jpg": [
+378,
+459,
+537,
+877
+],
+"phaethon_lepturus.jpg": [
+175,
+156,
+913,
+599
+],
+"phalacrocorax_carbo_carbo.jpg": [
+32,
+68,
+1182,
+793
+],
+"phalacrocorax_pelagicus.jpg": [
+241,
+139,
+807,
+616
+],
+"phalaropus_fulicarius.jpg": [
+280,
+223,
+645,
+402
+],
+"phalaropus_lobatus.jpg": [
+324,
+279,
+613,
+378
+],
+"phalaropus_tricolor.jpg": [
+288,
+221,
+656,
+460
+],
+"pheucticus_ludovicianus.jpg": [
+183,
+297,
+965,
+1538
+],
+"phoebetria_fusca.jpg": [
+254,
+151,
+796,
+536
+],
+"phoenicopterus_ruber.jpg": [
+62,
+260,
+1137,
+1494
+],
+"pica_hudsonia.jpg": [
+179,
+333,
+938,
+1191
+],
+"picoides_dorsalis.jpg": [
+234,
+302,
+891,
+1233
+],
+"pinguinus_impennis.jpg": [
+8,
+81,
+1246,
+671
+],
+"pinicola_enucleator.jpg": [
+327,
+509,
+660,
+910
+],
+"pipilo_erythrophthalmus.jpg": [
+344,
+452,
+598,
+962
+],
+"piranga_ludoviciana.jpg": [
+359,
+498,
+552,
+925
+],
+"piranga_rubra.jpg": [
+360,
+476,
+572,
+851
+],
+"platalea_ajaja.jpg": [
+324,
+102,
+902,
+698
+],
+"plectrophenax_nivalis.jpg": [
+346,
+468,
+557,
+860
+],
+"plegadis_falcinellus.jpg": [
+339,
+141,
+710,
+595
+],
+"pluvialis_dominica.jpg": [
+299,
+252,
+655,
+428
+],
+"pluvialis_squatarola.jpg": [
+306,
+250,
+658,
+409
+],
+"podiceps_auritus.jpg": [
+399,
+234,
+546,
+414
+],
+"podiceps_cristatus.jpg": [
+230,
+237,
+831,
+318
+],
+"podiceps_grisegena.jpg": [
+305,
+219,
+645,
+442
+],
+"podiceps_nigricollis.jpg": [
+322,
+244,
+627,
+387
+],
+"podilymbus_podiceps.jpg": [
+261,
+241,
+724,
+439
+],
+"poecile_hudsonicus.jpg": [
+371,
+442,
+530,
+908
+],
+"polioptila_caerulea.jpg": [
+362,
+550,
+569,
+830
+],
+"polysticta_stelleri.jpg": [
+325,
+247,
+603,
+385
+],
+"pooecetes_gramineus.jpg": [
+374,
+611,
+534,
+742
+],
+"porphyrio_martinica.jpg": [
+453,
+318,
+468,
+206
+],
+"porzana_carolina.jpg": [
+316,
+235,
+644,
+400
+],
+"progne_subis.jpg": [
+231,
+372,
+823,
+1063
+],
+"protonotaria_citrea.jpg": [
+356,
+508,
+589,
+789
+],
+"puffinus_lherminieri.jpg": [
+320,
+335,
+605,
+273
+],
+"puffinus_puffinus.jpg": [
+328,
+265,
+613,
+371
+],
+"quiscalus_major.jpg": [
+167,
+350,
+935,
+1180
+],
+"quiscalus_quiscula.jpg": [
+181,
+355,
+942,
+1232
+],
+"rallus_crepitans.jpg": [
+296,
+436,
+697,
+955
+],
+"rallus_elegans.jpg": [
+322,
+248,
+631,
+413
+],
+"rallus_limicola.jpg": [
+300,
+206,
+694,
+491
+],
+"recurvirostra_americana.jpg": [
+314,
+217,
+642,
+433
+],
+"regulus_satrapa.jpg": [
+360,
+447,
+562,
+910
+],
+"riparia_riparia.jpg": [
+325,
+456,
+682,
+897
+],
+"rissa_tridactyla.jpg": [
+328,
+284,
+642,
+311
+],
+"rynchops_niger.jpg": [
+164,
+400,
+968,
+987
+],
+"salpinctes_obsoletus.jpg": [
+384,
+457,
+570,
+909
+],
+"sayornis_nigricans.jpg": [
+386,
+509,
+542,
+861
+],
+"sayornis_phoebe.jpg": [
+366,
+604,
+567,
+803
+],
+"sayornis_saya.jpg": [
+356,
+428,
+626,
+1031
+],
+"sciurus_carolinensis.jpg": [
+50,
+71,
+1185,
+1731
+],
+"scolopax_minor.jpg": [
+319,
+221,
+636,
+465
+],
+"seiurus_aurocapilla.jpg": [
+367,
+444,
+561,
+892
+],
+"selasphorus_rufus.jpg": [
+388,
+450,
+561,
+940
+],
+"setophaga_aestiva.jpg": [
+359,
+514,
+561,
+905
+],
+"setophaga_americana.jpg": [
+437,
+519,
+309,
+844
+],
+"setophaga_auduboni.jpg": [
+365,
+432,
+564,
+940
+],
+"setophaga_caerulescens.jpg": [
+398,
+485,
+528,
+850
+],
+"setophaga_castanea.jpg": [
+365,
+496,
+568,
+880
+],
+"setophaga_cerulea.jpg": [
+145,
+36,
+1030,
+1488
+],
+"setophaga_citrina.jpg": [
+511,
+573,
+198,
+662
+],
+"setophaga_coronata.jpg": [
+383,
+462,
+528,
+854
+],
+"setophaga_discolor.jpg": [
+361,
+459,
+553,
+888
+],
+"setophaga_dominica.jpg": [
+389,
+479,
+459,
+898
+],
+"setophaga_fusca.jpg": [
+398,
+524,
+477,
+866
+],
+"setophaga_magnolia.jpg": [
+378,
+470,
+530,
+912
+],
+"setophaga_palmarum.jpg": [
+394,
+443,
+528,
+914
+],
+"setophaga_pensylvanica.jpg": [
+354,
+522,
+540,
+876
+],
+"setophaga_pinus.jpg": [
+430,
+562,
+432,
+777
+],
+"setophaga_ruticilla.jpg": [
+346,
+569,
+580,
+712
+],
+"setophaga_striata.jpg": [
+421,
+499,
+510,
+899
+],
+"setophaga_tigrina.jpg": [
+388,
+576,
+577,
+818
+],
+"setophaga_townsendi.jpg": [
+371,
+495,
+573,
+895
+],
+"sibirionetta_formosa.jpg": [
+256,
+149,
+743,
+596
+],
+"sitta_canadensis.jpg": [
+368,
+521,
+545,
+871
+],
+"sitta_carolinensis.jpg": [
+178,
+384,
+956,
+1154
+],
+"sitta_pusilla.jpg": [
+359,
+455,
+557,
+955
+],
+"somateria_mollissima.jpg": [
+0,
+2,
+1280,
+844
+],
+"somateria_spectabilis.jpg": [
+93,
+152,
+1153,
+655
+],
+"spatula_clypeata.jpg": [
+154,
+117,
+968,
+656
+],
+"spatula_discors.jpg": [
+319,
+226,
+643,
+448
+],
+"sphyrapicus_varius.jpg": [
+387,
+451,
+534,
+900
+],
+"spinus_pinus.jpg": [
+354,
+457,
+583,
+926
+],
+"spiza_americana.jpg": [
+376,
+495,
+553,
+894
+],
+"spizella_passerina.jpg": [
+392,
+493,
+500,
+913
+],
+"spizella_pusilla.jpg": [
+373,
+455,
+543,
+904
+],
+"spizelloides_arborea.jpg": [
+371,
+441,
+567,
+911
+],
+"starnoenas_cyanocephala.jpg": [
+210,
+116,
+848,
+633
+],
+"stercorarius_longicaudus.jpg": [
+174,
+293,
+955,
+1286
+],
+"stercorarius_parasiticus.jpg": [
+247,
+270,
+793,
+451
+],
+"stercorarius_pomarinus.jpg": [
+338,
+244,
+547,
+372
+],
+"sterna_dougallii.jpg": [
+384,
+504,
+517,
+776
+],
+"sterna_forsteri.jpg": [
+313,
+212,
+711,
+473
+],
+"sterna_hirundo.jpg": [
+351,
+481,
+633,
+751
+],
+"sterna_paradisaea.jpg": [
+379,
+444,
+547,
+906
+],
+"sternula_antillarum.jpg": [
+375,
+457,
+534,
+883
+],
+"strix_nebulosa.jpg": [
+144,
+268,
+1086,
+1137
+],
+"sturnella_magna.jpg": [
+64,
+42,
+1142,
+1775
+],
+"sula_leucogaster.jpg": [
+209,
+338,
+914,
+1163
+],
+"surnia_ulula.jpg": [
+173,
+374,
+953,
+1189
+],
+"tachycineta_bicolor.jpg": [
+407,
+670,
+483,
+524
+],
+"thalasseus_acuflavidus.jpg": [
+311,
+262,
+650,
+378
+],
+"thalasseus_maximus.jpg": [
+306,
+228,
+648,
+443
+],
+"thryomanes_bewickii.jpg": [
+389,
+580,
+491,
+597
+],
+"thryothorus_ludovicianus.jpg": [
+394,
+457,
+459,
+897
+],
+"toxostoma_rufum.jpg": [
+25,
+77,
+1217,
+1731
+],
+"tringa_flavipes.jpg": [
+319,
+199,
+640,
+483
+],
+"tringa_melanoleuca.jpg": [
+296,
+229,
+677,
+443
+],
+"tringa_nebularia.jpg": [
+516,
+252,
+370,
+370
+],
+"tringa_semipalmata.jpg": [
+294,
+199,
+654,
+481
+],
+"tringa_solitaria.jpg": [
+336,
+248,
+618,
+394
+],
+"troglodytes_aedon.jpg": [
+375,
+524,
+560,
+857
+],
+"tufted_titmouse.jpg": [
+354,
+448,
+581,
+866
+],
+"tympanuchus_cupido.jpg": [
+135,
+39,
+1108,
+812
+],
+"tympanuchus_phasianellus.jpg": [
+199,
+285,
+882,
+421
+],
+"tyrannus_dominicensis.jpg": [
+363,
+417,
+574,
+961
+],
+"tyrannus_savana.jpg": [
+372,
+452,
+553,
+898
+],
+"tyrannus_tyrannus.jpg": [
+363,
+449,
+545,
+928
+],
+"tyto_furcata.jpg": [
+63,
+202,
+1150,
+1558
+],
+"uria_aalge.jpg": [
+313,
+271,
+598,
+392
+],
+"uria_lomvia.jpg": [
+319,
+285,
+668,
+260
+],
+"vermivora_bachmanii.jpg": [
+298,
+427,
+680,
+951
+],
+"vermivora_cyanoptera.jpg": [
+359,
+524,
+563,
+859
+],
+"vireo_flavifrons.jpg": [
+438,
+526,
+450,
+849
+],
+"vireo_gilvus.jpg": [
+371,
+574,
+531,
+871
+],
+"vireo_griseus.jpg": [
+405,
+484,
+482,
+859
+],
+"vireo_olivaceus.jpg": [
+336,
+417,
+604,
+934
+],
+"vireo_solitarius.jpg": [
+353,
+506,
+573,
+804
+],
+"xema_sabini.jpg": [
+310,
+287,
+618,
+352
+],
+"zenaida_aurita.jpg": [
+0,
+0,
+1280,
+1570
+],
+"zonotrichia_albicollis.jpg": [
+331,
+519,
+601,
+894
+],
+"zonotrichia_leucophrys.jpg": [
+379,
+526,
+502,
+860
+]
+}
+}

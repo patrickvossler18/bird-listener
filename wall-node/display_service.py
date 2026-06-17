@@ -117,12 +117,15 @@ class Service:
         self._render_now(now)
 
     def handle_detection(self, payload: dict) -> None:
-        scientific = (payload.get("scientificName")
-                      or payload.get("scientific_name") or "").strip()
-        common = (payload.get("commonName")
-                  or payload.get("common_name") or "").strip()
-        confidence = float(payload.get("confidence", 0) or 0)
-        when = payload.get("timestamp") or payload.get("time")
+        # Accept camelCase (our tests), snake_case, and BirdNET-Go's PascalCase.
+        scientific = (payload.get("scientificName") or payload.get("scientific_name")
+                      or payload.get("ScientificName") or "").strip()
+        common = (payload.get("commonName") or payload.get("common_name")
+                  or payload.get("CommonName") or "").strip()
+        confidence = float(payload.get("confidence",
+                           payload.get("Confidence", 0)) or 0)
+        when = (payload.get("timestamp") or payload.get("time")
+                or payload.get("Time"))
         if not scientific:
             print(f"[detect] ignoring payload without scientific name: {payload}")
             return

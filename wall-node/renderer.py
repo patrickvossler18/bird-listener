@@ -9,6 +9,7 @@ A "bird" is a dict: {common, scientific, when, plate_path (Path | None)}.
 """
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 from PIL import Image, ImageChops, ImageDraw, ImageFilter, ImageFont
@@ -140,6 +141,65 @@ def _fit_cover(img: Image.Image, w: int, h: int) -> Image.Image:
     return new.crop((left, top, left + w, top + h))
 
 
+# --- Subject-aware cropping -------------------------------------------------
+# Precomputed (offline, via tools/compute_crops.py using rembg salient-object
+# segmentation) bounding box per plate, so we crop to the bird instead of a
+# blind center-crop. crops.json: {"boxes": {"<filename>": [x, y, w, h]}}.
+_CROPS_PATH = Path(__file__).resolve().parent / "crops.json"
+_CROPS_CACHE: dict | None = None
+
+
+def _crops() -> dict:
+    global _CROPS_CACHE
+    if _CROPS_CACHE is None:
+        try:
+            _CROPS_CACHE = json.loads(_CROPS_PATH.read_text()).get("boxes", {})
+        except Exception:
+            _CROPS_CACHE = {}
+    return _CROPS_CACHE
+
+
+def _subject_box(plate_path, img: Image.Image):
+    """Cached subject box [x, y, w, h] for this plate, clamped to the image, or
+    None if there's no cached box (caller falls back)."""
+    box = _crops().get(Path(plate_path).name)
+    if not box:
+        return None
+    x, y, w, h = box
+    x = max(0, min(int(x), img.width - 1))
+    y = max(0, min(int(y), img.height - 1))
+    w = max(1, min(int(w), img.width - x))
+    h = max(1, min(int(h), img.height - y))
+    return (x, y, w, h)
+
+
+def _expand_to_aspect(box, W, H, target_w, target_h):
+    """Grow a subject box outward to the target aspect (never shrink, so the
+    subject is never clipped), centered and clamped to the image."""
+    x, y, w, h = box
+    ar = target_w / target_h
+    cx, cy = x + w / 2, y + h / 2
+    if w / h < ar:
+        w = h * ar
+    else:
+        h = w / ar
+    w, h = min(w, W), min(h, H)
+    cx = min(max(cx, w / 2), W - w / 2)
+    cy = min(max(cy, h / 2), H - h / 2)
+    return (round(cx - w / 2), round(cy - h / 2), round(w), round(h))
+
+
+def _smart_fill(plate_path, img: Image.Image, w: int, h: int) -> Image.Image:
+    """Fill WxH with the plate, framed on its subject: expand the cached subject
+    box to WxH's aspect, crop, resize. Falls back to a plain center cover-crop
+    when no subject box is cached."""
+    box = _subject_box(plate_path, img)
+    if box is None:
+        return _fit_cover(img, w, h)
+    ex, ey, ew, eh = _expand_to_aspect(box, img.width, img.height, w, h)
+    return img.convert("RGB").crop((ex, ey, ex + ew, ey + eh)).resize((w, h))
+
+
 def _no_plate_panel(width, height, fonts_dir) -> Image.Image:
     panel = Image.new("RGB", (width, height), _CREAM)
     draw = ImageDraw.Draw(panel)
@@ -160,7 +220,7 @@ def _compose_single(width, height, bird, fonts_dir, caption_scale=1.0) -> Image.
 
     plate = bird.get("plate_path")
     if plate and Path(plate).exists():
-        canvas.paste(_fit_cover(Image.open(plate), width, art_h), (0, 0))
+        canvas.paste(_smart_fill(plate, Image.open(plate), width, art_h), (0, 0))
     else:
         canvas.paste(_no_plate_panel(width, art_h, fonts_dir), (0, 0))
 
@@ -258,7 +318,12 @@ def compose_birds(width, height, birds, fonts_dir, trim=True, caption_scale=1.0)
         if plate and Path(plate).exists():
             im = Image.open(plate)
             if trim:
-                im = _trim_to_subject(im)
+                box = _subject_box(plate, im)        # precomputed rembg box
+                if box is not None:
+                    x, y, w, h = box
+                    im = im.convert("RGB").crop((x, y, x + w, y + h))
+                else:
+                    im = _trim_to_subject(im)         # fallback: density trim
             plates.append(im)
             aspects.append(im.width / im.height)
         else:

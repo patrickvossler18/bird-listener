@@ -23,7 +23,30 @@ from pathlib import Path
 from config import CONFIG
 from display_driver import get_driver
 from light_sensor import LightSensor
-from renderer import compose_birds, to_panel
+from localtime import format_local
+from renderer import compose_birds, compose_collage, to_panel
+
+
+def render_frame(birds):
+    """Build the RGB frame for these birds: the kachō-e cutout collage when
+    enabled (falling back to the Audubon-plate render if it can't), else plates."""
+    if CONFIG.art_mode == "collage":
+        frame = compose_collage(
+            CONFIG.panel_width, CONFIG.panel_height, birds, CONFIG.cutouts_dir,
+            fly_prob=CONFIG.fly_prob, budget_frac=CONFIG.collage_budget_frac,
+            recency_decay=CONFIG.collage_recency_decay,
+            min_area_frac=CONFIG.collage_min_area_frac,
+            ellipse_bias=CONFIG.collage_ellipse_bias, pad=CONFIG.collage_pad,
+            grid_stride=CONFIG.collage_grid_stride,
+            fonts_dir=CONFIG.fonts_dir, show_names=CONFIG.collage_names,
+            caption_scale=CONFIG.caption_scale,
+        )
+        if frame is not None:
+            return frame
+        print("[render] collage unavailable (no numpy or no cutouts) -> plates")
+    return compose_birds(
+        CONFIG.panel_width, CONFIG.panel_height, birds, CONFIG.fonts_dir,
+        trim=CONFIG.plate_trim, caption_scale=CONFIG.caption_scale)
 
 
 def load_species_map(path: Path) -> dict:
@@ -97,11 +120,9 @@ class Service:
         names = ", ".join(b["common"] or b["scientific"] for b in birds)
         print(f"[render] drawing {len(birds)} bird(s): {names}")
         self.driver.show(to_panel(
-            compose_birds(CONFIG.panel_width, CONFIG.panel_height, birds,
-                          CONFIG.fonts_dir, trim=CONFIG.plate_trim,
-                          caption_scale=CONFIG.caption_scale),
+            render_frame(birds),
             dither=CONFIG.dither, sharpen=CONFIG.sharpen, rotate=CONFIG.rotate,
-            clean_bg=CONFIG.clean_bg,
+            clean_bg=CONFIG.clean_bg, clean_ink=CONFIG.clean_ink,
         ))
         self._rendered_sig = self.recent.signature(now)
         self._last_render_ts = now
@@ -124,8 +145,10 @@ class Service:
                   or payload.get("CommonName") or "").strip()
         confidence = float(payload.get("confidence",
                            payload.get("Confidence", 0)) or 0)
-        when = (payload.get("timestamp") or payload.get("time")
-                or payload.get("Time"))
+        raw_when = (payload.get("timestamp") or payload.get("time")
+                    or payload.get("Time"))
+        # BirdNET-Go timestamps are UTC; show them on the panel in local time.
+        when = format_local(raw_when, CONFIG.timezone)
         if not scientific:
             print(f"[detect] ignoring payload without scientific name: {payload}")
             return
@@ -191,8 +214,10 @@ class Service:
 
 def main(argv: list[str]) -> int:
     ap = argparse.ArgumentParser(description="Bird Listener wall-node display service")
-    ap.add_argument("--once", nargs="+", metavar="SCIENTIFIC_NAME",
-                    help="render the given species(s) to the panel and exit (no MQTT)")
+    ap.add_argument("--once", nargs="+", metavar="SCI[|COMMON]",
+                    help="render the given species to the panel and exit (no MQTT). "
+                         "Each arg is a scientific name, optionally 'Sci|Common Name' "
+                         "to also show the common name in the collage caption.")
     ap.add_argument("--clear", action="store_true", help="clear the panel and exit")
     args = ap.parse_args(argv)
 
@@ -203,17 +228,18 @@ def main(argv: list[str]) -> int:
     if args.once:
         species_map = load_species_map(CONFIG.species_map_path)
         driver = get_driver(CONFIG.out_dir, force_mock=CONFIG.force_mock_display)
-        birds = [
-            {"scientific": s, "common": "", "when": None,
-             "plate_path": resolve_plate(species_map, s)}
-            for s in args.once
-        ]
+        # First name is treated as most-recent so recency sizing is observable.
+        # Each arg is "Sci" or "Sci|Common Name".
+        birds = []
+        for arg in args.once:
+            sci, _, common = arg.partition("|")
+            sci = sci.strip()
+            birds.append({"scientific": sci, "common": common.strip(), "when": None,
+                          "plate_path": resolve_plate(species_map, sci)})
         driver.show(to_panel(
-            compose_birds(CONFIG.panel_width, CONFIG.panel_height, birds,
-                          CONFIG.fonts_dir, trim=CONFIG.plate_trim,
-                          caption_scale=CONFIG.caption_scale),
+            render_frame(birds),
             dither=CONFIG.dither, sharpen=CONFIG.sharpen, rotate=CONFIG.rotate,
-            clean_bg=CONFIG.clean_bg,
+            clean_bg=CONFIG.clean_bg, clean_ink=CONFIG.clean_ink,
         ))
         return 0
 

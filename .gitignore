@@ -1,3 +1,7 @@
+# Secrets — never commit (holds GEMINI_API_KEY etc.)
+.env
+.env.*
+
 # Python
 .venv/
 __pycache__/
@@ -18,3 +22,13 @@ wall-node/images/*.png
 
 # Source plates for the pipeline
 tools/source_plates/
+
+# kachō-e pipeline: binaries are large/derived and synced to the Pi, not
+# committed (same policy as wall-node/images). Keep the code, prompt, and notes.
+#   - illustrations/  cream-ground art (seeded + generated), the cutout source
+#   - refs/           cached Wikipedia anatomy photos + Edo style prints
+#   - cutouts/        the deployable transparent artifact (rsync to birdwall)
+# Back up tools/kachoe/illustrations/ — the generated half cost API calls to make.
+tools/kachoe/illustrations/
+tools/kachoe/refs/
+wall-node/cutouts/*.png

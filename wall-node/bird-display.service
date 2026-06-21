@@ -12,6 +12,10 @@ Environment=BL_MIN_CONFIDENCE=0.65
 Environment=BL_MAX_BIRDS=4
 Environment=BL_MULTI_WINDOW_SECONDS=900
 Environment=BL_MIN_REFRESH_SECONDS=30
+Environment=BL_TIMEZONE=America/Los_Angeles
+# Unbuffer Python stdout so [detect]/[render] logs reach the journal live
+# (otherwise low-volume prints sit in the block buffer and never appear).
+Environment=PYTHONUNBUFFERED=1
 Environment=BL_LUX_OFF=5
 Environment=BL_LUX_ON=15
 Environment=PYTHONPATH=/home/pi/e-Paper/RaspberryPi_JetsonNano/python/lib

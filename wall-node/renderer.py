@@ -9,7 +9,10 @@ A "bird" is a dict: {common, scientific, when, plate_path (Path | None)}.
 """
 from __future__ import annotations
 
+import hashlib
 import json
+import math
+import re
 from pathlib import Path
 
 from PIL import Image, ImageChops, ImageDraw, ImageFilter, ImageFont
@@ -370,8 +373,302 @@ def compose_birds(width, height, birds, fonts_dir, trim=True, caption_scale=1.0)
     return canvas
 
 
+# --- kachō-e cutout collage --------------------------------------------------
+# Transparent kachō-e cutouts (wall-node/cutouts/, built by tools/kachoe/) are
+# nested into an organic cluster, AvianVisitors-style: each bird spirals out from
+# the centre and lands at the closest position where its silhouette doesn't
+# collide with an already-placed one, so wings cradle tails instead of bboxes
+# touching. Ported from their apt.js maskPack; the collision grid is vectorised
+# with numpy so it's fast enough on the Pi Zero W (armv6l). Sized by recency
+# (most-recent bird largest), on a flat white ground that dithers cleanly on the
+# 6-colour panel. Returns None if numpy is missing or no bird has a cutout, so
+# the caller can fall back to the plate renderer.
+
+
+def _slugify(sci: str) -> str:
+    return re.sub(r"[^a-z0-9]+", "-", sci.lower()).strip("-")
+
+
+def cutout_for(cutouts_dir: Path, scientific: str, pose: int) -> Path | None:
+    """Path to a species' cutout for a pose (1 perched, 2 flight), or None."""
+    slug = _slugify(scientific)
+    name = f"{slug}.png" if pose == 1 else f"{slug}-{pose}.png"
+    path = cutouts_dir / name
+    return path if path.exists() else None
+
+
+def _pick_pose(cutouts_dir: Path, scientific: str, fly_prob: float) -> int:
+    """Perched by default; rarely flight (fly_prob) when a flight cutout exists.
+    Deterministic per species so the same bird doesn't flip pose between
+    refreshes within its window."""
+    if fly_prob > 0 and cutout_for(cutouts_dir, scientific, 2) is not None:
+        h = int(hashlib.sha1(scientific.lower().encode()).hexdigest()[:8], 16)
+        if (h % 1000) / 1000.0 < fly_prob:
+            return 2
+    return 1
+
+
+def _dilate(np, mask, k: int):
+    """4-connected dilation by k cells, growing the array by k on every side so
+    the gap sits *around* the silhouette."""
+    if k <= 0:
+        return mask
+    mh, mw = mask.shape
+    out = np.zeros((mh + 2 * k, mw + 2 * k), dtype=bool)
+    out[k:k + mh, k:k + mw] = mask
+    for _ in range(k):
+        out[1:, :] |= out[:-1, :]
+        out[:-1, :] |= out[1:, :]
+        out[:, 1:] |= out[:, :-1]
+        out[:, :-1] |= out[:, 1:]
+    return out
+
+
+def _grid_masks(np, tile, stride: int, pad: int):
+    """Build a tile's collision mask (at grid resolution, from its alpha) and a
+    pad-dilated stamp mask. Recomputed whenever the tile is resized."""
+    mw = max(1, int(round(tile["fullW"] / stride)))
+    mh = max(1, int(round(tile["fullH"] / stride)))
+    alpha = tile["img"].getchannel("A").resize((mw, mh), Image.BOX)
+    arr = np.frombuffer(alpha.tobytes(), dtype=np.uint8).reshape(mh, mw) > 40
+    tile["gm"] = arr
+    tile["gmp"] = _dilate(np, arr, pad)
+
+
+def _mask_pack(np, tiles, W, H, xbias, ybias, pad, stride):
+    """Assign each tile an (x, y) top-left so silhouettes nest without colliding.
+    Largest first from the centre; each subsequent tile spirals out on elliptical
+    rings to the closest free spot near the cluster's centre of mass."""
+    GW, GH = W // stride + 2, H // stride + 2
+    grid = np.zeros((GH, GW), dtype=bool)
+    for t in tiles:
+        _grid_masks(np, t, stride, pad)
+    tiles.sort(key=lambda t: -(t["fullW"] * t["fullH"]))
+
+    seed = [0x9E3779B9]
+
+    def rnd():
+        seed[0] = (seed[0] * 16807) % 2147483647
+        return seed[0] / 2147483647
+
+    cx, cy = W / 2, H / 2
+    placed = []
+    for i, t in enumerate(tiles):
+        gm = t["gm"]
+        mh, mw = gm.shape
+
+        def collide(px, py):
+            gx, gy = int(px // stride), int(py // stride)
+            if gx < 0 or gy < 0 or gx + mw > GW or gy + mh > GH:
+                return True
+            return bool(np.any(grid[gy:gy + mh, gx:gx + mw] & gm))
+
+        def stamp(px, py):
+            gmp = t["gmp"]
+            ph, pw = gmp.shape
+            gx = int(px // stride) - pad
+            gy = int(py // stride) - pad
+            gx0, gy0 = max(0, gx), max(0, gy)
+            gx1, gy1 = min(GW, gx + pw), min(GH, gy + ph)
+            if gx1 <= gx0 or gy1 <= gy0:
+                return
+            grid[gy0:gy1, gx0:gx1] |= gmp[gy0 - gy:gy1 - gy, gx0 - gx:gx1 - gx]
+
+        if i == 0:
+            t["x"], t["y"] = cx - t["fullW"] / 2, cy - t["fullH"] / 2
+            stamp(t["x"], t["y"])
+            placed.append(t)
+            continue
+
+        comX = comY = comW = 0.0
+        for p in placed:
+            a = p["fullW"] * p["fullH"]
+            comX += (p["x"] + p["fullW"] / 2) * a
+            comY += (p["y"] + p["fullH"] / 2) * a
+            comW += a
+        comX /= comW
+        comY /= comW
+
+        best, best_cost = None, math.inf
+        step = max(stride, min(t["fullW"], t["fullH"]) * 0.05)
+        max_r = max(W, H)
+        found_ring = -1.0
+        phase = rnd() * math.tau
+        r = 0.0
+        while r <= max_r:
+            if found_ring >= 0 and r > found_ring + step * 2:
+                break
+            samples = max(36, int(r / 1.6))
+            for k in range(samples):
+                theta = phase + (k / samples) * math.tau
+                px = cx + r * xbias * math.cos(theta) - t["fullW"] / 2
+                py = cy + r * ybias * math.sin(theta) - t["fullH"] / 2
+                if px < 0 or py < 0 or px + t["fullW"] > W or py + t["fullH"] > H:
+                    continue
+                if collide(px, py):
+                    continue
+                dxx = px + t["fullW"] / 2 - comX
+                dyy = py + t["fullH"] / 2 - comY
+                cost = math.hypot(dxx / xbias, dyy / ybias) + rnd() * step * 0.5
+                if cost < best_cost:
+                    best_cost, best = cost, (px, py)
+            if best is not None and found_ring < 0:
+                found_ring = r
+            r += step
+        if best is not None:
+            t["x"], t["y"] = best
+            stamp(*best)
+        else:
+            t["x"], t["y"] = -99999, -99999  # couldn't fit; hide rather than overlap
+        placed.append(t)
+    return placed
+
+
+def _cluster_bounds(placed):
+    L = T = math.inf
+    R = B = -math.inf
+    for t in placed:
+        if t["x"] < -1000:
+            continue
+        L, T = min(L, t["x"]), min(T, t["y"])
+        R, B = max(R, t["x"] + t["fullW"]), max(B, t["y"] + t["fullH"])
+    return L, T, R, B
+
+
+def _draw_collage_names(canvas, x0, y0, w, h, names, fonts_dir) -> None:
+    """Small dark name strip centered in the bottom band, on the existing
+    (white) ground — no bar, to keep the clean kachō-e look. Wraps to two lines
+    if one won't fit at a legible size."""
+    if not names:
+        return
+    draw = ImageDraw.Draw(canvas)
+    sep = "   ·   "
+    text = sep.join(names)
+    max_w = w - 32
+    font = _fit_font(draw, text, fonts_dir, max_w, int(h * 0.62), min_size=11)
+    lines = [text]
+    if draw.textlength(text, font=font) > max_w:
+        mid = (len(names) + 1) // 2  # balance names across two lines
+        lines = [sep.join(names[:mid]), sep.join(names[mid:])]
+        widest = max(lines, key=len)
+        font = _fit_font(draw, widest, fonts_dir, max_w, int(h * 0.46), min_size=11)
+    line_h = font.size + 3
+    ty = y0 + (h - line_h * len(lines)) // 2
+    for line in lines:
+        lw = draw.textlength(line, font=font)
+        draw.text((x0 + (w - lw) // 2, ty), line, fill=(20, 20, 20), font=font)
+        ty += line_h
+
+
+def compose_collage(width, height, birds, cutouts_dir, *, bg=(255, 255, 255),
+                    fly_prob=0.12, budget_frac=0.5, recency_decay=0.78,
+                    min_area_frac=0.02, ellipse_bias=2.0, pad=3,
+                    grid_stride=4, fonts_dir=None, show_names=True,
+                    caption_scale=1.0) -> Image.Image | None:
+    """Nest each bird's transparent cutout into a single RGB frame. `birds` is in
+    recency order (most recent first); the most recent renders largest. With
+    show_names, a small name strip is drawn along the bottom (the cluster packs
+    above it). Returns None if numpy is unavailable or no bird has a cutout
+    (caller falls back)."""
+    try:
+        import numpy as np
+    except ImportError:
+        return None
+
+    cutouts_dir = Path(cutouts_dir)
+    if fonts_dir is not None:
+        fonts_dir = Path(fonts_dir)
+    tiles = []
+    names = []
+    for rank, b in enumerate(birds):
+        sci = (b.get("scientific") or "").strip()
+        if not sci:
+            continue
+        pose = _pick_pose(cutouts_dir, sci, fly_prob)
+        path = cutout_for(cutouts_dir, sci, pose)
+        if path is None:
+            continue
+        img = Image.open(path).convert("RGBA")
+        tiles.append({"img": img, "ar": img.width / img.height,
+                      "score": recency_decay ** rank})
+        common = (b.get("common") or "").strip()
+        names.append(f"{common} ({sci})"
+                     if common and common.lower() != sci.lower() else sci)
+    if not tiles:
+        return None
+
+    # Reserve a thin band at the bottom for the names; the cluster packs in the
+    # area above it so birds never overlap the text.
+    cap_h = 0
+    if show_names and fonts_dir is not None and names:
+        cap_h = min(int(max(30, height // 14) * caption_scale), height // 5)
+    pack_h = height - cap_h
+
+    vp = width * pack_h
+    budget, min_area = vp * budget_frac, vp * min_area_frac
+    score_sum = sum(t["score"] for t in tiles) or 1.0
+    for t in tiles:
+        t["area"] = max(min_area, budget * t["score"] / score_sum)
+    # Flooring rare birds may push the total over budget; squeeze it back out of
+    # the larger tiles so the floor stays intact.
+    area_sum = sum(t["area"] for t in tiles)
+    if area_sum > budget:
+        fixed = sum(t["area"] for t in tiles if t["area"] <= min_area + 1e-9)
+        flex = area_sum - fixed
+        shrink = min(1.0, max(0.0, budget - fixed) / flex) if flex > 0 else 1.0
+        for t in tiles:
+            if t["area"] > min_area + 1e-9:
+                t["area"] *= shrink
+    for t in tiles:
+        t["fullW"] = math.sqrt(t["area"] * t["ar"])
+        t["fullH"] = t["fullW"] / t["ar"]
+
+    xbias, ybias = ellipse_bias, 1.0
+    placed = _mask_pack(np, tiles, width, pack_h, xbias, ybias, pad, grid_stride)
+    # Scale-to-fit: shrink + repack until every tile lands on screen.
+    L, T, R, B = _cluster_bounds(placed)
+    for _ in range(10):
+        missing = any(t["x"] < -1000 for t in placed)
+        overflow = L < 0 or T < 0 or R > width or B > pack_h
+        if not missing and not overflow:
+            break
+        scale = 0.93
+        if overflow:
+            sx = (width * 0.96) / max(R - L, width * 0.96)
+            sy = (pack_h * 0.94) / max(B - T, pack_h * 0.94)
+            scale = min(scale, sx, sy)
+        for t in tiles:
+            t["fullW"] *= scale
+            t["fullH"] *= scale
+        placed = _mask_pack(np, tiles, width, pack_h, xbias, ybias, pad, grid_stride)
+        L, T, R, B = _cluster_bounds(placed)
+
+    # Re-centre the cluster (the spiral biases toward its centre of mass).
+    if R > -math.inf:
+        dx, dy = width / 2 - (L + R) / 2, pack_h / 2 - (T + B) / 2
+        if abs(dx) > 1 or abs(dy) > 1:
+            for t in placed:
+                if t["x"] > -1000:
+                    t["x"] += dx
+                    t["y"] += dy
+
+    canvas = Image.new("RGB", (width, height), bg)
+    # Paint back-to-front (smallest/last-placed on top reads better); placed is
+    # largest-first, so reverse so the big anchor bird sits behind.
+    for t in reversed(placed):
+        if t["x"] < -1000:
+            continue
+        w_i, h_i = max(1, round(t["fullW"])), max(1, round(t["fullH"]))
+        im = t["img"].resize((w_i, h_i), Image.LANCZOS)
+        canvas.paste(im, (round(t["x"]), round(t["y"])), im)
+    if cap_h:
+        _draw_collage_names(canvas, 0, height - cap_h, width, cap_h, names, fonts_dir)
+    return canvas
+
+
 def to_panel(frame: Image.Image, *, dither: bool = True, sharpen: float = 0.0,
-             rotate: int = 0, clean_bg: bool = True) -> Image.Image:
+             rotate: int = 0, clean_bg: bool = True,
+             clean_ink: bool = True) -> Image.Image:
     """Quantize an RGB frame to the Spectra-6 palette, ready for the panel.
 
     dither   Floyd-Steinberg dithering (True) or hard nearest-color (False:
@@ -382,8 +679,23 @@ def to_panel(frame: Image.Image, *, dither: bool = True, sharpen: float = 0.0,
              mounted upside-down. 180 is a lossless flip.
     clean_bg Snap the near-white/cream paper to pure white before dithering so
              the background doesn't dither into yellow/red speckle.
+    clean_ink Snap near-black pixels to pure black (and near-white to white)
+             before dithering, so dark birds (e.g. a crow) render as solid black
+             instead of scattering into red/blue/green speckle on the 6-colour
+             palette. Edges-only; midtones still dither for shading.
     """
     img = frame.convert("RGB")
+    if clean_ink:
+        # Joint per-pixel extremes: max(R,G,B) low -> near-black; min(R,G,B)
+        # high -> near-white. Pillow-only (no numpy) so it runs on the Pi.
+        r, g, b = img.split()
+        mx = ImageChops.lighter(ImageChops.lighter(r, g), b)
+        mn = ImageChops.darker(ImageChops.darker(r, g), b)
+        dark = mx.point(lambda p: 255 if p < 60 else 0)
+        light = mn.point(lambda p: 255 if p > 205 else 0)
+        img = img.copy()
+        img.paste((0, 0, 0), None, dark)
+        img.paste((255, 255, 255), None, light)
     if clean_bg:
         # Flood-fill the paper background to pure white from many points along
         # every edge. The background (cream paper + white scan margins) is

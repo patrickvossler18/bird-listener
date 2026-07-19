@@ -64,6 +64,23 @@ Play a bird call near the mic (or wait for a real one) — you should see JSON
 events appear, and they should also show in the BirdNET-Go web UI with live
 spectrograms.
 
+## Reaching the web UI
+
+The dashboard is bound to **loopback only**, so it is not reachable from the
+LAN. Tunnel to it over SSH:
+
+```bash
+ssh -L 8080:localhost:8080 birdpi     # leave running
+# then browse http://localhost:8080
+```
+
+It's closed because the UI answers unauthenticated reads — full config (secrets
+masked), system info, detection history, and the configured latitude/longitude.
+Writes are already rejected, but the location leak alone is worth closing on a
+network with other devices on it. Upstream's `security.basicauth` is an OAuth2
+flow that expects a domain and HTTPS, which fits a bare LAN IP badly, so the
+tunnel is both stronger and simpler than turning it on.
+
 ## MQTT credentials
 
 The broker requires auth (`allow_anonymous false`) — anything on the LAN that

@@ -13,7 +13,12 @@ services:
     devices:
       - /dev/snd:/dev/snd
     ports:
-      - "8080:8080"          # web UI / dashboard
+      # Loopback-only. The UI serves the config, system info, detection history
+      # and our latitude/longitude to any unauthenticated LAN client, and
+      # upstream's basicauth is an OAuth2 flow wanting a domain + HTTPS (a poor
+      # fit for a bare LAN IP). So don't publish it; tunnel instead:
+      #     ssh -L 8080:localhost:8080 birdpi   -> http://localhost:8080
+      - "127.0.0.1:8080:8080"
     volumes:
       - ./birdnet-go/config:/config
       - ./birdnet-go/data:/data

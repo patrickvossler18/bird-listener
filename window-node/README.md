@@ -105,15 +105,29 @@ docker compose restart mosquitto birdnet-go
 
 ## Container image updates
 
-`docker-update.sh` (weekly via `docker-update.timer`) pulls floating tags and
-recreates what changed. Two deliberate policies:
+`docker-update.sh` (weekly via `docker-update.timer`) patches both images
+automatically, by two different mechanisms:
 
-- **mosquitto** is on `eclipse-mosquitto:2`, a maintained major tag — patched
-  automatically.
-- **birdnet-go** is pinned to a dated release. Upstream's `:latest` and
-  `:nightly` are the *same* moving, unreviewed build, so neither is a stable
-  channel to follow. The script only *reports* when a newer release exists;
-  bumping the tag in `docker-compose.yml` stays a deliberate act.
+- **mosquitto** is on `eclipse-mosquitto:2`, a maintained major tag — a plain
+  `docker compose pull` follows it.
+- **birdnet-go** is pinned to an immutable dated tag, and upgraded by
+  *rewriting the pin*. It cannot follow a floating tag: upstream's
+  `nightly-build.yml` and `release-build.yml` **both** pass
+  `create-latest-tag: true`, so every nightly build moves `:latest`, and dated
+  releases also move `:nightly`. Neither is release-only. The **GitHub releases
+  API** is, so the script follows that instead — tracking releases while never
+  taking a nightly build.
+
+The birdnet-go upgrade has three rails, since it runs unattended at 04:00:
+
+1. **Soak period** (`MIN_RELEASE_AGE_DAYS`, default 3) — never take a release
+   on its publication day.
+2. **Pull before mutate** — a failed pull aborts with the config untouched.
+3. **Health check with rollback** (`HEALTH_TIMEOUT`, default 180s) — if the new
+   image doesn't report healthy, the previous tag is restored and redeployed.
+
+`AUTO_UPGRADE_BIRDNET=false` reverts to report-only. Check what it did with
+`journalctl -u docker-update.service`.
 
 ## Networking
 

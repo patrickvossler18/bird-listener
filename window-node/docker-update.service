@@ -1,0 +1,11 @@
+[Unit]
+Description=bird-listener: pull patched container images
+After=network-online.target docker.service
+Wants=network-online.target
+Requires=docker.service
+
+[Service]
+Type=oneshot
+User=pi
+WorkingDirectory=/home/pi/bird-listener/window-node
+ExecStart=/bin/bash /home/pi/bird-listener/window-node/docker-update.sh

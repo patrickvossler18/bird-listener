@@ -14,6 +14,8 @@ wall-node/out/
 window-node/birdnet-go/config/config.yaml
 window-node/birdnet-go/data/
 window-node/mosquitto/data/
+# Hashed MQTT credentials — generated per-deployment, never commit.
+window-node/mosquitto/passwd
 
 # Image library is large/derived; keep the map, not the binaries.
 # (Comment this out if you'd rather commit the processed plates.)

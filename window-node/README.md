@@ -1,77 +1,86 @@
 # Window node — bird detection (BirdNET-Go + Mosquitto)
 
-Runs on the **Raspberry Pi 4** (or Pi 5) by the window. BirdNET-Go listens to
-the USB mic 24/7, identifies species, and publishes detections to MQTT, which
-the wall node subscribes to.
+Runs on a **Raspberry Pi 4 or 5** by the window. BirdNET-Go listens to the
+USB mic around the clock, identifies species, and publishes detections to
+MQTT, which the wall node subscribes to.
 
-> BirdNET-Go needs a Pi 4 or Pi 5 — it dropped Pi 3 / Zero 2 W support.
+> BirdNET-Go needs a Pi 4 or Pi 5; it dropped Pi 3 / Zero 2 W support.
 
-## Setup
+## Install
 
-### 0. Get the code onto the Pi
-
-The repo is private, so rather than cloning (which needs GitHub creds on the Pi)
-just copy it from your Mac over SSH — no credentials needed:
+`birdlistener flash --node window` does all of this on first boot. By hand,
+on a Pi running Raspberry Pi OS Lite with SSH:
 
 ```bash
-# from the repo root on your Mac:
-rsync -av --delete \
-  --exclude '.git' --exclude '*/.venv' --exclude '*/out' \
-  --exclude '__pycache__' --exclude '*/data' \
-  ./ pi@birdpi.local:~/bird-listener/
+sudo cp node.env.example /etc/bird-listener/node.env   # from a checkout; fill it in (BL_NODE=window)
+sudo bash install.sh                                     # clones the repo, runs window-node/setup.sh
 ```
 
-(Re-run that anytime to push updates. Alternatively, generate a GitHub token and
-`git clone` on the Pi.)
+`setup.sh` installs Docker, creates the MQTT user from node.env, starts
+BirdNET-Go + Mosquitto, waits for BirdNET-Go to write its config, and patches
+in your coordinates, threshold and the MQTT output
+(`configure_birdnet.py`). Re-run any time; it only changes what differs.
 
-### 1. Bootstrap (one command)
-
-SSH in and run the bootstrap — it installs Docker, adds you to the docker group,
-installs `mosquitto-clients`, and brings the stack up:
+## Check
 
 ```bash
-ssh pi@birdpi.local
-cd ~/bird-listener
-bash window-node/setup.sh
+python3 ~/bird-listener/window-node/doctor.py        # docker, containers, mic, config, MQTT auth, last detection
+arecord -l                                             # the USB mic should be listed
+mosquitto_sub -h localhost -t birdnet/detection -v -u birds -P '<password>'
 ```
 
-This starts **BirdNET-Go** (web UI at `http://birdpi.local:8080`) and
-**Mosquitto** (MQTT on `:1883`). Log out/in once afterward so `docker` works
-without `sudo`.
+Play a bird call near the mic (or wait for a real one): JSON events appear on
+the bus and in the web UI with live spectrograms.
 
-### 2. Configure detection + MQTT output
+## The web UI
 
-1. Plug in the USB sound card + mic. Confirm it's seen: `arecord -l`.
-2. BirdNET-Go generates `birdnet-go/config/config.yaml` on first run — edit it
-   (or use the web UI → Settings) to set your **latitude/longitude**,
-   **threshold**, and enable the **MQTT** output. See
-   `birdnet-go/config/config.yaml.template` for the exact keys (broker
-   `tcp://mosquitto:1883`, topic `birdnet/detection`).
-3. Restart BirdNET-Go to pick up config changes:
-   `docker compose restart birdnet-go`.
-
-## Verify
-
-Watch detections flow onto the bus (install `mosquitto-clients` or use the
-container):
+Bound to **loopback only**, so it isn't reachable from the LAN. Tunnel:
 
 ```bash
-mosquitto_sub -h localhost -t birdnet/detection -v
-# or:  docker exec -it mosquitto mosquitto_sub -t birdnet/detection -v
+ssh -L 8080:localhost:8080 birdpi     # leave running; browse http://localhost:8080
 ```
 
-Play a bird call near the mic (or wait for a real one) — you should see JSON
-events appear, and they should also show in the BirdNET-Go web UI with live
-spectrograms.
+It's closed because the UI answers unauthenticated reads: full config
+(secrets masked), system info, detection history, and your coordinates.
+Upstream's `security.basicauth` is an OAuth2 flow that expects a domain and
+HTTPS, a poor fit for a bare LAN IP, so the tunnel is both stronger and simpler.
 
-## Networking
+## MQTT credentials
 
-Give this Pi a stable hostname (e.g. `birdpi.local` via mDNS) or a static DHCP
-lease so the wall node's `BL_MQTT_HOST` stays valid across reboots.
+The broker requires auth (`allow_anonymous false`): anything on the LAN that
+could publish to `birdnet/detection` controls what the wall node displays.
+The password is `BL_MQTT_PASS` in node.env on both Pis. Generated, gitignored
+files hold it on this node:
+
+| File | Consumed by |
+|---|---|
+| `mosquitto/passwd` | the broker (hashed, mode 600, uid 1883) |
+| `birdnet-go/config/config.yaml` | BirdNET-Go's `realtime.mqtt` block |
+
+To rotate: change `BL_MQTT_PASS` in node.env on both Pis, then
+`birdlistener update` (or `bash setup.sh` here and
+`sudo systemctl restart bird-display` on the wall node after editing its `.env`).
+
+## Container image updates
+
+`docker-update.sh` (weekly via `docker-update.timer`) patches both images:
+
+- **mosquitto** is on `eclipse-mosquitto:2`, a maintained major tag; a plain
+  `docker compose pull` follows it.
+- **birdnet-go** is pinned to an immutable dated tag and upgraded by
+  *rewriting the pin* from the GitHub releases API. It can't follow a floating
+  tag: upstream moves both `:latest` and `:nightly` on every nightly build.
+
+Three rails, since it runs unattended at 04:00 Sunday: a soak period
+(`MIN_RELEASE_AGE_DAYS`, default 3), pull before mutate, and a health check
+with rollback (`HEALTH_TIMEOUT`, default 180 s). `AUTO_UPGRADE_BIRDNET=false`
+reverts to report-only. `journalctl -u docker-update.service` shows what it did.
 
 ## Mic notes
 
-- Recommended: omnidirectional electret/lavalier (e.g. Boya BY-LM40) on a
-  CM108-based USB sound card; low self-noise matters more than sensitivity.
-- Weatherproof the capsule if it sits outside (foam windscreen + drip cover);
-  use a powered USB hub if the cable run is long.
+- A USB lavalier with its own interface (e.g. the one in the root README) is
+  the simplest path: one cable, no sound card.
+- Low self-noise matters more than sensitivity. Weatherproof the capsule if it
+  sits outside (foam windscreen + drip cover); a powered hub helps on long runs.
+- BirdNET-Go's audio source defaults to the system capture device, which is
+  the USB mic when it's the only one.

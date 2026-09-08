@@ -1,0 +1,12 @@
+[Unit]
+Description=bird-listener: weekly container image update
+
+[Timer]
+# Sunday 04:00, an hour ahead of the apt unattended-upgrade reboot window
+# (04:30) so the two don't contend for the SD card.
+OnCalendar=Sun *-*-* 04:00:00
+RandomizedDelaySec=30m
+Persistent=true
+
+[Install]
+WantedBy=timers.target

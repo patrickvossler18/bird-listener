@@ -1,6 +1,11 @@
 # Core (needed everywhere, incl. laptop dry-runs)
 Pillow>=10.0
 paho-mqtt>=2.0
+tzdata  # zoneinfo fallback so BL_TIMEZONE resolves even without system tzdata
+# Vectorises the collage packer (renderer.compose_collage) so it's fast on the
+# Pi Zero W. On Raspberry Pi OS install from piwheels (`pip install numpy`).
+# Optional: without it, art_mode=collage auto-falls back to the plate renderer.
+numpy>=1.24
 
 # Pi-only hardware libraries — installed on the wall node, optional elsewhere.
 # The service auto-detects their absence and falls back to mock drivers.

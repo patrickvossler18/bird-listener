@@ -1,3 +1,9 @@
+# Secrets — never commit (holds GEMINI_API_KEY, MQTT passwords).
+.env
+.env.*
+!.env.example
+# Laptop-side site file written by `birdlistener flash` lives outside the repo.
+
 # Python
 .venv/
 __pycache__/
@@ -10,6 +16,8 @@ wall-node/out/
 window-node/birdnet-go/config/config.yaml
 window-node/birdnet-go/data/
 window-node/mosquitto/data/
+# Hashed MQTT credentials — generated per-deployment, never commit.
+window-node/mosquitto/passwd
 
 # Image library is large/derived; keep the map, not the binaries.
 # (Comment this out if you'd rather commit the processed plates.)
@@ -18,3 +26,20 @@ wall-node/images/*.png
 
 # Source plates for the pipeline
 tools/source_plates/
+
+# kachō-e pipeline: binaries are large/derived and synced to the Pi, not
+# committed (same policy as wall-node/images). Keep the code, prompt, and notes.
+#   - illustrations/  cream-ground art (seeded + generated), the cutout source
+#   - refs/           cached Wikipedia anatomy photos + Edo style prints
+#   - cutouts/        the deployable transparent artifact (rsync to birdwall)
+# Back up tools/kachoe/illustrations/ — the generated half cost API calls to make.
+tools/kachoe/illustrations/
+tools/kachoe/refs/
+wall-node/cutouts/*.png
+
+# kachō-e pipeline scratch (range list fetched by `birdlistener art`)
+tools/kachoe/range.json
+
+# Python packaging artefacts (uv/pip builds of cli/)
+cli/build/
+*.egg-info/

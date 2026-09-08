@@ -1,0 +1,21 @@
+The kachō-e illustration pipeline in this directory (pregen.py, cutout.py,
+prompt.template.md, species-notes.json and the scripts around them) is adapted
+from AvianVisitors by Teagan Warner:
+
+    https://github.com/Twarner491/AvianVisitors
+
+AvianVisitors is licensed under Creative Commons Attribution-NonCommercial-
+ShareAlike 4.0 International (CC BY-NC-SA 4.0), and so is everything in this
+directory, along with the illustration files it produces (the seeded art is
+theirs; the generated art is a derivative made with their prompt approach).
+
+    https://creativecommons.org/licenses/by-nc-sa/4.0/
+
+In short: you may use, share and adapt this pipeline and its art for
+non-commercial purposes, as long as you credit AvianVisitors and release your
+adaptations under the same license. The Edo-period style reference prints
+(Ohara Koson, Yoshida Hiroshi) are public domain.
+
+The rest of the bird-listener repository (the display service, the detection
+node setup, the laptop CLI) is separate original work under the MIT License in
+the repository root.

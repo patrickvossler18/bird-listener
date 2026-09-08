@@ -102,9 +102,9 @@ class Config:
     clean_ink: bool = os.environ.get("BL_CLEAN_INK", "1") != "0"
     # Caption text scale for the single-bird name bar (1.0 = default size).
     caption_scale: float = _env_float("BL_CAPTION_SCALE", 1.0)
-    # IANA zone used to localize the detection timestamp in the caption. Defaults
-    # to Pacific; BirdNET-Go emits UTC, so without this the panel reads GMT.
-    timezone: str = os.environ.get("BL_TIMEZONE", "America/Los_Angeles")
+    # IANA zone used to localize the detection timestamp in the caption.
+    # BirdNET-Go emits UTC; blank (the default) means the Pi's own local zone.
+    timezone: str = os.environ.get("BL_TIMEZONE", "")
 
     # --- Light gate (BH1750, lux) ---
     # OFF by default: e-ink holds its image with no power, so blanking when the

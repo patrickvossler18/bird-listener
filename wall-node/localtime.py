@@ -3,7 +3,7 @@
 BirdNET-Go publishes detection timestamps in whatever its host clock emits —
 typically UTC (which is why the panel was showing GMT). We parse that timestamp
 once, at the point we receive it, and reformat it in the configured local zone
-(Pacific by default) so the e-ink caption reads like a wall clock.
+(the host's zone by default) so the e-ink caption reads like a wall clock.
 
 The parser is deliberately permissive: BirdNET-Go's payload key and format have
 varied across versions (ISO 8601 with or without a `Z`/offset, plain
@@ -95,12 +95,16 @@ def format_local(raw, tz_name: str) -> str | None:
         s = str(raw).strip()
         return s or None
 
-    try:
-        local = dt.astimezone(ZoneInfo(tz_name))
-    except (ZoneInfoNotFoundError, ValueError):
-        # Bad/unknown zone name: fall back to the host's local time rather than
-        # silently keeping UTC.
+    if not tz_name:
+        # No zone configured: the host's own local zone.
         local = dt.astimezone()
+    else:
+        try:
+            local = dt.astimezone(ZoneInfo(tz_name))
+        except (ZoneInfoNotFoundError, ValueError):
+            # Bad/unknown zone name: fall back to the host's local time rather
+            # than silently keeping UTC.
+            local = dt.astimezone()
 
     today = datetime.now(local.tzinfo).date()
     fmt = "%-I:%M %p" if local.date() == today else "%b %-d, %-I:%M %p"

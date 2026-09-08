@@ -1,0 +1,8 @@
+# The kachō-e art pipeline (runs on your computer, not the Pi).
+# `birdlistener art` installs these into tools/kachoe/.venv, or use the
+# Dockerfile next to this file to skip the Python setup entirely.
+Pillow>=10.0
+numpy>=1.24
+# BiRefNet matting for cutout.py. rembg pulls onnxruntime; the CPU build is
+# plenty for ~100 images. First run downloads the ~1 GB model to ~/.u2net/.
+rembg[cpu]>=2.0.60

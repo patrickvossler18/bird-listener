@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "birdlistener"
+version = "0.1.0"
+description = "Set up and look after a bird-listener install from your computer: flash the Pis, build the art, check health."
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+dependencies = []
+
+[project.scripts]
+birdlistener = "birdlistener.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["birdlistener*"]

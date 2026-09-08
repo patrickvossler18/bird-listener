@@ -1,11 +1,11 @@
 # Bird Listener
 
 A microphone by the window listens for birds around the clock. When one is
-identified, a framed e-ink print on the wall quietly changes to a kachō-e
+identified, a framed e-ink print on the wall changes to a kachō-e
 style illustration of that bird, or a small collage of the birds heard in the
-last quarter hour. No cloud, no glow, nothing to charge.
+last quarter hour.
 
-Two Raspberry Pis on your home WiFi, talking over MQTT:
+The project needs two Raspberry Pis on your home WiFi, talking over MQTT:
 
 ```
   [ Window node ]                                [ Wall node ]
@@ -32,11 +32,7 @@ See [Credits and license](#credits-and-license).
 | Raspberry Pi Zero 2 W | Sits inside the frame. An original Zero W also works (`--pi zero-w`) but is slow | $15 |
 | 2 microSD cards (16 GB+) and 2 USB power supplies | | $25 |
 
-Optional: a BH1750 light sensor (I2C) if you want the panel to blank when the
-room is dark. The e-ink holds its image unpowered, so most people skip it.
 
-Do not connect a battery to the PhotoPainter. A LiPo on this board damaged
-the charge circuit on the original build; USB power is all it needs.
 
 ## Setting it up
 
@@ -93,7 +89,7 @@ agent can drive the whole setup, and `--dry-run` shows exactly what would be
 written. If you're on Windows, `flash --emit-only` writes the three cloud-init
 files for you to copy onto a card written by the Imager app.
 
-### Living with it
+### Maintenance
 
 - `birdlistener doctor` any time something looks off. `--json` for agents.
 - `birdlistener art` again in another season: BirdNET-Go's species list shifts
@@ -102,7 +98,7 @@ files for you to copy onto a card written by the Imager app.
 - Security updates install themselves weekly; so do BirdNET-Go releases after
   a three-day soak, with rollback if the new one is unhealthy.
 
-## How it fits together
+## Code layout
 
 ```
 bird-listener/
